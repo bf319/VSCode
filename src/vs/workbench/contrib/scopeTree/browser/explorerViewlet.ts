@@ -40,7 +40,7 @@ import { AddRootFolderAction, OpenFolderAction, OpenFileFolderAction } from 'vs/
 import { isMacintosh } from 'vs/base/common/platform';
 import { Codicon } from 'vs/base/common/codicons';
 
-export class ExplorerViewletViewsScopeTreeContribution extends Disposable implements IWorkbenchContribution {
+export class ExplorerViewletViewsContribution extends Disposable implements IWorkbenchContribution {
 
 	private openEditorsVisibleContextKey!: IContextKey<boolean>;
 
