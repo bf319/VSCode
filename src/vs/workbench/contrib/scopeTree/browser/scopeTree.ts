@@ -8,13 +8,13 @@ import { URI } from 'vs/base/common/uri';
 import * as perf from 'vs/base/common/performance';
 import { IAction, WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification } from 'vs/base/common/actions';
 import { memoize } from 'vs/base/common/decorators';
-import { IFilesConfiguration, ExplorerFolderContext, FilesExplorerFocusedContext, ExplorerFocusedContext, ExplorerRootContext, ExplorerResourceReadonlyContext, IExplorerService, ExplorerResourceCut, ExplorerResourceMoveableToTrash, ExplorerCompressedFocusContext, ExplorerCompressedFirstFocusContext, ExplorerCompressedLastFocusContext, ExplorerResourceAvailableEditorIdsContext } from 'vs/workbench/contrib/files/common/files';
-import { NewFolderAction, NewFileAction, FileCopiedContext, RefreshExplorerView, CollapseExplorerView } from 'vs/workbench/contrib/files/browser/fileActions';
+import { IFilesConfiguration, ExplorerFolderContext, FilesExplorerFocusedContext, ExplorerFocusedContext, ExplorerRootContext, ExplorerResourceReadonlyContext, IExplorerService, ExplorerResourceCut, ExplorerResourceMoveableToTrash, ExplorerCompressedFocusContext, ExplorerCompressedFirstFocusContext, ExplorerCompressedLastFocusContext, ExplorerResourceAvailableEditorIdsContext } from 'vs/workbench/common/filesScopeTree/files';
+import { NewFolderAction, NewFileAction, FileCopiedContext, RefreshExplorerView, CollapseExplorerView } from 'vs/workbench/contrib/scopeTree/browser/fileActions';
 import { toResource, SideBySideEditor } from 'vs/workbench/common/editor';
 import { DiffEditorInput } from 'vs/workbench/common/editor/diffEditorInput';
 import * as DOM from 'vs/base/browser/dom';
 import { IWorkbenchLayoutService } from 'vs/workbench/services/layout/browser/layoutService';
-import { ExplorerDecorationsProvider } from 'vs/workbench/contrib/files/browser/views/explorerDecorationsProvider';
+import { ExplorerDecorationsProvider } from 'vs/workbench/contrib/scopeTree/browser/media/explorerDecorationsProvider';
 import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
 import { IConfigurationService, IConfigurationChangeEvent } from 'vs/platform/configuration/common/configuration';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
@@ -29,14 +29,14 @@ import { DelayedDragHandler } from 'vs/base/browser/dnd';
 import { IEditorService, SIDE_GROUP, ACTIVE_GROUP } from 'vs/workbench/services/editor/common/editorService';
 import { IViewPaneOptions, ViewPane } from 'vs/workbench/browser/parts/views/viewPaneContainer';
 import { ILabelService } from 'vs/platform/label/common/label';
-import { ExplorerDelegate, ExplorerDataSource, FilesRenderer, ICompressedNavigationController, FilesFilter, FileSorter, FileDragAndDrop, ExplorerCompressionDelegate, isCompressedFolderName } from 'vs/workbench/contrib/files/browser/views/explorerViewer';
+import { ExplorerDelegate, ExplorerDataSource, FilesRenderer, ICompressedNavigationController, FilesFilter, FileSorter, FileDragAndDrop, ExplorerCompressionDelegate, isCompressedFolderName } from 'vs/workbench/contrib/scopeTree/browser/explorerViewer';
 import { IThemeService, IFileIconTheme } from 'vs/platform/theme/common/themeService';
 import { IWorkbenchThemeService } from 'vs/workbench/services/themes/common/workbenchThemeService';
 import { ITreeContextMenuEvent } from 'vs/base/browser/ui/tree/tree';
 import { IMenuService, MenuId, IMenu } from 'vs/platform/actions/common/actions';
 import { createAndFillInContextMenuActions } from 'vs/platform/actions/browser/menuEntryActionViewItem';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { ExplorerItem, NewExplorerItem } from 'vs/workbench/contrib/files/common/explorerModel';
+import { ExplorerItem, NewExplorerItem } from 'vs/workbench/common/filesScopeTree/explorerModel';
 import { ResourceLabels } from 'vs/workbench/browser/labels';
 import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
 import { IAsyncDataTreeViewState } from 'vs/base/browser/ui/tree/asyncDataTree';
@@ -281,6 +281,22 @@ export class ExplorerView extends ViewPane {
 				this.selectActiveFile(false, true);
 			}
 		}));
+
+		this.tree.onMouseOver(e => {
+			const icon = document.getElementById('iconContainer_' + e.element?.resource.toString());
+
+			if (icon !== null) {
+				icon.style.visibility = 'visible';
+			}
+		});
+
+		this.tree.onMouseOut(e => {
+			const icon = document.getElementById('iconContainer_' + e.element?.resource.toString());
+
+			if (icon !== null) {
+				icon.style.visibility = 'hidden';
+			}
+		});
 	}
 
 	getActions(): IAction[] {
@@ -821,6 +837,34 @@ export class ExplorerView extends ViewPane {
 			this.dragHandler.dispose();
 		}
 		super.dispose();
+	}
+
+	public async setRoot(resource: URI): Promise<void> {
+		await this.explorerService.select(resource, true);	// Make the resource visible
+
+		let newRoot: ExplorerItem | null = this.explorerService.findClosest(resource);
+
+		if (newRoot === null) {
+			throw new Error('Resource not set or could not find resource');
+		}
+		else {
+			if (this.tree.hasNode(newRoot)) {
+				await this.tree.expand(newRoot);
+			}
+
+			await this.tree.setInput(newRoot);
+		}
+	}
+
+	public currentRoot(): ExplorerItem | undefined {
+		let root = this.tree.getInput();
+
+		if (this.currentRoot === undefined) {
+			return undefined;
+		}
+		else {
+			return root as ExplorerItem;
+		}
 	}
 }
 
