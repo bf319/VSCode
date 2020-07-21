@@ -19,7 +19,7 @@ import { ITreeNode, ITreeFilter, TreeVisibility, TreeFilterResult, IAsyncDataSou
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IConfigurationService, ConfigurationTarget } from 'vs/platform/configuration/common/configuration';
-import { IFilesConfiguration, IExplorerService, VIEW_ID } from 'vs/workbench/contrib/files/common/files';
+import { IFilesConfiguration, IExplorerService, VIEW_ID } from 'vs/workbench/common/filesScopeTree/files';
 import { dirname, joinPath, isEqualOrParent, basename, distinctParents } from 'vs/base/common/resources';
 import { InputBox, MessageType } from 'vs/base/browser/ui/inputbox/inputBox';
 import { localize } from 'vs/nls';
@@ -28,7 +28,7 @@ import { once } from 'vs/base/common/functional';
 import { IKeyboardEvent } from 'vs/base/browser/keyboardEvent';
 import { equals, deepClone } from 'vs/base/common/objects';
 import * as path from 'vs/base/common/path';
-import { ExplorerItem, NewExplorerItem } from 'vs/workbench/contrib/files/common/explorerModel';
+import { ExplorerItem, NewExplorerItem } from 'vs/workbench/common/filesScopeTree/explorerModel';
 import { compareFileExtensionsNumeric, compareFileNamesNumeric } from 'vs/base/common/comparers';
 import { fillResourceDataTransfers, CodeDataTransfers, extractResources, containsDragType } from 'vs/workbench/browser/dnd';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -44,7 +44,7 @@ import { URI } from 'vs/base/common/uri';
 import { ITask, sequence } from 'vs/base/common/async';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IWorkspaceFolderCreationData } from 'vs/platform/workspaces/common/workspaces';
-import { findValidPasteFileTarget } from 'vs/workbench/contrib/files/browser/fileActions';
+import { findValidPasteFileTarget } from 'vs/workbench/contrib/scopeTree/browser/fileActions';
 import { FuzzyScore, createMatches } from 'vs/base/common/filters';
 import { Emitter, Event, EventMultiplexer } from 'vs/base/common/event';
 import { ITreeCompressionDelegate } from 'vs/base/browser/ui/tree/asyncDataTree';
@@ -57,6 +57,7 @@ import { domEvent } from 'vs/base/browser/event';
 import { IEditableData } from 'vs/workbench/common/views';
 import { IEditorInput } from 'vs/workbench/common/editor';
 import { CancellationTokenSource, CancellationToken } from 'vs/base/common/cancellation';
+import 'vs/css!./media/scopeTreeFileIcon';
 
 export class ExplorerDelegate implements IListVirtualDelegate<ExplorerItem> {
 
@@ -362,6 +363,20 @@ export class FilesRenderer implements ICompressibleTreeRenderer<ExplorerItem, Fu
 			domId
 		});
 
+		templateData.label.element.style.float = '';	// So that other flags used in VSCode don't move to the left (except for the focus button)
+		const iconContainer = this.renderFocusIcon(stat);
+
+		if (stat.isDirectory) {
+			templateData.label.element.style.float = 'left';
+
+			this.removeLeftoverIcons(templateData.label.element, iconContainer);
+
+			templateData.label.element.appendChild(iconContainer);
+		}
+		else {
+			this.removeLeftoverIcons(templateData.label.element, iconContainer);
+		}
+
 		return templateData.label.onDidRender(() => {
 			try {
 				this.updateWidth(stat);
@@ -369,6 +384,33 @@ export class FilesRenderer implements ICompressibleTreeRenderer<ExplorerItem, Fu
 				// noop since the element might no longer be in the tree, no update of width necessery
 			}
 		});
+	}
+
+	private renderFocusIcon(stat: ExplorerItem): HTMLElement {
+		const iconContainer = document.createElement('img');
+		DOM.addClass(iconContainer, 'scope-tree-focus-icon');
+		iconContainer.style.float = 'left';
+		iconContainer.style.alignSelf = 'center';
+		iconContainer.style.visibility = 'hidden';
+		iconContainer.style.display = 'flex';
+		iconContainer.style.paddingLeft = '10px';
+		iconContainer.id = 'iconContainer_' + stat.resource.toString();
+
+		iconContainer.onclick = async () => {
+			// await this.explorerService.setRoot(stat.resource, 0, true);
+			await this.explorerService.setRoot(stat.resource);
+		};
+
+		return iconContainer;
+	}
+
+	// Leftover icons might appear when a directory is expanded
+	private removeLeftoverIcons(element: HTMLElement, toRemove: HTMLElement): void {
+		for (let child of element.childNodes) {
+			if ((<HTMLElement>child).className === toRemove.className) {
+				element.removeChild(child);
+			}
+		}
 	}
 
 	private renderInputBox(container: HTMLElement, stat: ExplorerItem, editableData: IEditableData): IDisposable {

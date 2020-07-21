@@ -83,8 +83,8 @@ export class ExplorerService implements IExplorerService {
 		return this._sortOrder;
 	}
 
-	public async setRoot(resource: URI, ancestor?: number, fromButton?: boolean): Promise<void> {
-		await this.view?.setRoot(resource, ancestor, fromButton);
+	public async setRoot(resource: URI): Promise<void> {
+		await this.view?.setRoot(resource);
 	}
 
 	public currentRoot(): ExplorerItem | undefined {
