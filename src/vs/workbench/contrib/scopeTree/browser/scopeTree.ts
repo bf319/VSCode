@@ -222,6 +222,8 @@ export class ExplorerView extends ViewPane {
 	protected renderHeader(container: HTMLElement): void {
 		super.renderHeader(container);
 
+		this.createBreadcrumb(container);
+
 		// Expand on drag over
 		this.dragHandler = new DelayedDragHandler(container, () => this.setExpanded(true));
 
@@ -242,6 +244,77 @@ export class ExplorerView extends ViewPane {
 	protected layoutBody(height: number, width: number): void {
 		super.layoutBody(height, width);
 		this.tree.layout(height, width);
+	}
+
+	// Add breadcrumb to the file tree
+	private breadcrumb = document.createElement('ul');
+
+	private createBreadcrumb(container: HTMLElement): void {
+		this.breadcrumb.style.listStyle = 'none';
+		this.breadcrumb.style.backgroundColor = '#eee';
+		this.breadcrumb.style.whiteSpace = 'nowrap';	// Otherwise directories with dashes in the name would be broken in 2 lines on overflow.
+
+		this.breadcrumb.style.position = 'relative';
+		this.breadcrumb.style.left = '-20px';
+
+		this.renderBreadcrumb(this.explorerService.roots[0]);
+
+		container.parentElement?.appendChild(this.breadcrumb);
+	}
+
+	private renderBreadcrumb(root: ExplorerItem | ExplorerItem[] | undefined): void {
+		let mouseOverHandler = function outlineBreadcrumbElement(breadcrumbElement: HTMLLIElement) {
+			breadcrumbElement.style.color = '#01447e';
+			breadcrumbElement.style.textDecoration = 'underline';
+		};
+
+		let mouseOutHandler = function removeOutlineFromBreadcrumbElement(breadcrumbElement: HTMLLIElement) {
+			breadcrumbElement.style.color = '';
+			breadcrumbElement.style.textDecoration = '';
+		};
+
+		while (this.breadcrumb.firstChild) {
+			let toRemove = this.breadcrumb.firstChild;
+
+			// Remove the listeners to avoid memory leak.
+			if (toRemove instanceof HTMLLIElement) {
+				toRemove.removeEventListener('mouseover', () => mouseOverHandler(toRemove as HTMLLIElement));
+				toRemove.removeEventListener('mouseout', () => mouseOutHandler(toRemove as HTMLLIElement));
+			}
+
+			this.breadcrumb.removeChild(toRemove);
+		}
+
+
+		if (root instanceof ExplorerItem) {
+			while (root !== undefined) {
+				let breadcrumbElement = document.createElement('li');
+
+				breadcrumbElement.textContent = root.name + '/';
+				breadcrumbElement.style.display = 'inline';
+				let resource = (root as ExplorerItem).resource;
+
+				breadcrumbElement.onclick = async () => {
+					await this.setRoot(resource);
+				};
+
+				breadcrumbElement.addEventListener('mouseover', () => mouseOverHandler(breadcrumbElement));
+				breadcrumbElement.addEventListener('mouseout', () => mouseOutHandler(breadcrumbElement));
+
+				root = root.parent;
+
+				if (this.breadcrumb.hasChildNodes()) {
+					this.breadcrumb.insertBefore(breadcrumbElement, this.breadcrumb.firstChild);
+				}
+				else {
+					this.breadcrumb.appendChild(breadcrumbElement);
+				}
+			}
+
+		}
+
+		// this.parentButton.style.paddingRight = '5px';
+		// this.breadcrumb.insertBefore(this.parentButton, this.breadcrumb.firstChild);
 	}
 
 	renderBody(container: HTMLElement): void {
@@ -281,7 +354,7 @@ export class ExplorerView extends ViewPane {
 
 						await this.tree.setInput(newRoot);
 
-						// this.renderBreadcrumb();
+						this.renderBreadcrumb(this.tree.getInput());
 					}
 				}
 				else {
@@ -886,6 +959,8 @@ export class ExplorerView extends ViewPane {
 			}
 
 			await this.tree.setInput(newRoot);
+
+			this.renderBreadcrumb(this.tree.getInput());
 		}
 	}
 
