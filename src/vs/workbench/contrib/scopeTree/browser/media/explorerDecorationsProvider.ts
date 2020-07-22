@@ -10,9 +10,9 @@ import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace
 import { IDecorationsProvider, IDecorationData } from 'vs/workbench/services/decorations/browser/decorations';
 import { listInvalidItemForeground, listDeemphasizedForeground } from 'vs/platform/theme/common/colorRegistry';
 import { DisposableStore } from 'vs/base/common/lifecycle';
-import { IExplorerService } from 'vs/workbench/common/filesScopeTree/files';
+import { IExplorerService } from 'vs/workbench/contrib/files/common/files';
 import { explorerRootErrorEmitter } from 'vs/workbench/contrib/scopeTree/browser/explorerViewer';
-import { ExplorerItem } from 'vs/workbench/common/filesScopeTree/explorerModel';
+import { ExplorerItem } from 'vs/workbench/contrib/files/common/explorerModel';
 
 export function provideDecorations(fileStat: ExplorerItem): IDecorationData | undefined {
 	if (fileStat.isRoot && fileStat.isError) {
