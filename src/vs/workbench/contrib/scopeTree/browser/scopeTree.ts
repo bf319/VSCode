@@ -263,8 +263,41 @@ export class ExplorerView extends ViewPane {
 		this.onConfigurationUpdated(configuration);
 
 		// When the explorer viewer is loaded, listen to changes to the editor input
-		this._register(this.editorService.onDidActiveEditorChange(() => {
+		this._register(this.editorService.onDidActiveEditorChange(async () => {
 			this.selectActiveFile(true);
+
+			let resource: URI = <URI>this.editorService.activeEditor?.resource;
+
+			await this.explorerService.select(resource, true);
+			let newRoot: ExplorerItem | null = this.explorerService.findClosest(resource);
+			const fileToSelect = newRoot;
+
+			if (newRoot !== null) {
+				let ancestorsToExpand = this.pathToCurrentRoot(newRoot);
+
+				if (!ancestorsToExpand) {	// File opened is not a child of the current root => Parent of the file becomes the root
+					if (newRoot.parent !== undefined) {
+						newRoot = newRoot.parent;
+
+						await this.tree.setInput(newRoot);
+
+						// this.renderBreadcrumb();
+					}
+				}
+				else {
+					ancestorsToExpand = ancestorsToExpand as ExplorerItem[];
+
+					// Expand ancestors top to bottom
+					for (let element of ancestorsToExpand.reverse()) {
+						await this.tree.expand(element, false);
+					}
+				}
+
+				if (fileToSelect !== null) {
+					this.tree.setSelection([fileToSelect]);
+					this.tree.setFocus([fileToSelect]);
+				}
+			}
 		}));
 
 		// Also handle configuration updates
@@ -864,6 +897,35 @@ export class ExplorerView extends ViewPane {
 		}
 		else {
 			return root as ExplorerItem;
+		}
+	}
+
+	private pathToCurrentRoot(possibleChild: ExplorerItem): boolean | ExplorerItem[] {
+		const currentRoot = this.tree.getInput();
+		let isChild = false;
+		let ancestors: ExplorerItem[] = [];	// Keep track of the ancestors in case file is a child of the current root.
+
+		if (currentRoot !== undefined && (currentRoot instanceof ExplorerItem)) {
+			let copy = possibleChild;
+
+			while (copy !== undefined && copy.parent !== undefined) {
+				ancestors.push(copy.parent);
+
+				if (copy.parent === currentRoot) {
+					isChild = true;
+					break;
+				}
+				else {
+					copy = copy.parent;
+				}
+			}
+		}
+
+		if (!isChild) {
+			return false;
+		}
+		else {
+			return ancestors;
 		}
 	}
 }
