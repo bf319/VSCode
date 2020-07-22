@@ -53,6 +53,7 @@ import { SIDE_BAR_BACKGROUND } from 'vs/workbench/common/theme';
 import { IViewDescriptorService } from 'vs/workbench/common/views';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { IUriIdentityService } from 'vs/workbench/services/uriIdentity/common/uriIdentity';
+import { Codicon } from 'vs/base/common/codicons';
 
 interface IExplorerViewColors extends IColorMapping {
 	listDropBackground?: ColorValue | undefined;
@@ -223,6 +224,7 @@ export class ExplorerView extends ViewPane {
 		super.renderHeader(container);
 
 		this.createBreadcrumb(container);
+		this.renderParentButton();
 
 		// Expand on drag over
 		this.dragHandler = new DelayedDragHandler(container, () => this.setExpanded(true));
@@ -313,8 +315,44 @@ export class ExplorerView extends ViewPane {
 
 		}
 
-		// this.parentButton.style.paddingRight = '5px';
-		// this.breadcrumb.insertBefore(this.parentButton, this.breadcrumb.firstChild);
+		this.parentButton.style.paddingRight = '5px';
+		this.breadcrumb.insertBefore(this.parentButton, this.breadcrumb.firstChild);
+	}
+
+	// Add parent button to the file tree
+	private parentButton: HTMLElement = DOM.$(Codicon.foldUp.cssSelector);
+	private displayParentButton: boolean = true;
+
+	private renderParentButton() {
+		this.parentButton.style.verticalAlign = 'middle';
+
+		this.parentButton.onclick = async () => {
+			const currentRoot = this.tree.getInput();
+
+			if (currentRoot !== undefined && currentRoot instanceof ExplorerItem && currentRoot.parent !== undefined) {
+				const newRoot = currentRoot.parent;
+
+				await this.tree.setInput(newRoot);
+
+				this.renderBreadcrumb(newRoot);
+			}
+		};
+
+		// Display full path of the current root on hover
+		this.parentButton.addEventListener('mouseover', () => {
+			let currentRoot = this.tree.getInput();
+
+			if (currentRoot instanceof ExplorerItem) {
+				this.parentButton.title = (currentRoot as ExplorerItem).resource.toString();
+			}
+		});
+
+		if (this.breadcrumb.hasChildNodes()) {
+			this.breadcrumb.insertBefore(this.parentButton, this.breadcrumb.firstChild);
+		}
+		else {
+			this.breadcrumb.appendChild(this.parentButton);
+		}
 	}
 
 	renderBody(container: HTMLElement): void {
