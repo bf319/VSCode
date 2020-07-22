@@ -340,6 +340,9 @@ export class AsyncDataTree<TInput, T, TFilterData = void> implements IDisposable
 	get onDidFocus(): Event<void> { return this.tree.onDidFocus; }
 	get onDidBlur(): Event<void> { return this.tree.onDidBlur; }
 
+	get onMouseOver(): Event<ITreeMouseEvent<T>> { return Event.map(this.tree.onMouseOver, asTreeMouseEvent); }
+	get onMouseOut(): Event<ITreeMouseEvent<T>> { return Event.map(this.tree.onMouseOut, asTreeMouseEvent); }
+
 	get onDidChangeCollapseState(): Event<ICollapseStateChangeEvent<IAsyncDataTreeNode<TInput, T> | null, TFilterData>> { return this.tree.onDidChangeCollapseState; }
 
 	get onDidUpdateOptions(): Event<IAsyncDataTreeOptionsUpdate> { return this.tree.onDidUpdateOptions; }
