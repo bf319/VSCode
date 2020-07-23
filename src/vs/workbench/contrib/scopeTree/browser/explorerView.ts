@@ -659,6 +659,9 @@ export class ExplorerView extends ViewPane {
 		}
 	}
 
+	public async setRoot(resource: URI): Promise<void> {
+	}
+
 	private getActiveFile(): URI | undefined {
 		const input = this.editorService.activeEditor;
 
