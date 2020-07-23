@@ -117,7 +117,6 @@ export class MemFS implements FileSystemProvider, FileSearchProvider, TextSearch
 
 		while (selectedNumbers.size < size) {
 			const numberSelected = Math.floor(Math.random() * indexMax);
-
 			selectedNumbers.add(numberSelected);
 		}
 
@@ -126,7 +125,6 @@ export class MemFS implements FileSystemProvider, FileSearchProvider, TextSearch
 
 	private randomFiles(size: number): Set<string> {
 		const indices = this.randomSet(size, this.fileNames.length);
-
 		const files: Set<string> = new Set();
 
 		indices.forEach(index => {
@@ -138,7 +136,6 @@ export class MemFS implements FileSystemProvider, FileSearchProvider, TextSearch
 
 	private randomDirs(size: number): Set<string> {
 		const indices = this.randomSet(size, this.directoryNames.length);
-
 		const dirs: Set<string> = new Set();
 
 		indices.forEach(index => {
@@ -164,7 +161,6 @@ export class MemFS implements FileSystemProvider, FileSearchProvider, TextSearch
 		for (let dir of dirsSelected) {
 			const dirPath = path + dir + '/';
 			this.createDirectory(Uri.parse(dirPath));
-
 			this.addFilesAndDirectories(dirPath, Math.floor(Math.random() * 7 + 1), levels - 1);
 		}
 	}
