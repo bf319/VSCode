@@ -124,6 +124,81 @@ export class MemFS implements FileSystemProvider, FileSearchProvider, TextSearch
 		this.writeFile(Uri.parse(`memfs:/sample-folder/xyz/upper.txt`), textEncoder.encode('upper'), { create: true, overwrite: true });
 		this.writeFile(Uri.parse(`memfs:/sample-folder/xyz/def/foo.md`), textEncoder.encode('*MemFS*'), { create: true, overwrite: true });
 
+		let fileNames: string[] = [];
+
+		for (let i = 0; i < 10; i++) {
+			fileNames.push('file' + i + '.java');
+			fileNames.push('file' + i + '.cpp');
+			fileNames.push('file' + i + '.ts');
+			fileNames.push('file' + i + '.json');
+		}
+
+		let directoryNames: string[] = [];
+
+		for (let i = 0; i < 10; i++) {
+			directoryNames.push('folder' + i);
+			directoryNames.push('common' + i);
+			directoryNames.push('browser' + i);
+			directoryNames.push('media' + i);
+		}
+
+		function randomSet(size: number): Set<number> {
+			let selectedNumbers: Set<number> = new Set();
+
+			while (selectedNumbers.size < size) {
+				const numberSelected = Math.floor(Math.random() * fileNames.length);
+
+				selectedNumbers.add(numberSelected);
+			}
+
+			return selectedNumbers;
+		}
+
+		function randomFiles(size: number): Set<string> {
+			const indices = randomSet(size);
+
+			const files: Set<string> = new Set();
+
+			indices.forEach(index => {
+				files.add(fileNames[index]);
+			});
+
+			return files;
+		}
+
+		function randomDirs(size: number): Set<string> {
+			const indices = randomSet(size);
+
+			const dirs: Set<string> = new Set();
+
+			indices.forEach(index => {
+				dirs.add(directoryNames[index]);
+			});
+
+			return dirs;
+		}
+
+		let addFilesAndDirectories = (path: string, size: number, levels: number) => {
+			if (levels === 0) {
+				return;
+			}
+
+			const filesSelected = randomFiles(size);
+			const dirsSelected = randomDirs(size);
+
+			for (let file of filesSelected) {
+				this.writeFile(Uri.parse(path + file), new Uint8Array(0), { create: true, overwrite: true });
+			}
+
+			for (let dir of dirsSelected) {
+				this.createDirectory(Uri.parse(path + dir));
+
+				addFilesAndDirectories(path + dir + '/', Math.floor(Math.random() * 7 + 1), levels - 1);
+			}
+		};
+
+		addFilesAndDirectories(`memfs:/sample-folder/`, 7, 5);
+
 		// some files in different encodings
 		this.createDirectory(Uri.parse(`memfs:/sample-folder/encodings/`));
 		this.writeFile(
