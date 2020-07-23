@@ -169,7 +169,6 @@ export class MemFS implements FileSystemProvider, FileSearchProvider, TextSearch
 		}
 	}
 
-
 	seed() {
 		this.createDirectory(Uri.parse(`memfs:/sample-folder/`));
 
