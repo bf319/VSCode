@@ -659,7 +659,26 @@ export class ExplorerView extends ViewPane {
 		}
 	}
 
-	public async setRoot(resource: URI): Promise<void> {
+	public setRoot(resource: URI): void {
+		this.explorerService.select(resource, true).then(() => {
+			const newRoot: ExplorerItem | null = this.explorerService.findClosest(resource);
+
+			if (newRoot === null) {
+				throw new Error('Resource not set or could not find resource');
+			}
+
+			if (this.tree.hasNode(newRoot)) {
+				this.tree.expand(newRoot).then((fulfilled: boolean) => {
+					if (!fulfilled) {
+						throw new Error('Could not expand the new root');
+					}
+
+					this.tree.setInput(newRoot as ExplorerItem).then(() => {
+						// Will need to render the breadcrumb and expand ancestors
+					});
+				});
+			}
+		});
 	}
 
 	private getActiveFile(): URI | undefined {
