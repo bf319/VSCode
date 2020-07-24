@@ -91,6 +91,80 @@ export class MemFS implements FileSystemProvider, FileSearchProvider, TextSearch
 		this.disposable?.dispose();
 	}
 
+	private fileNames: string[] = [];
+	private directoryNames: string[] = [];
+
+	private populateFiles(size: number) {
+		for (let i = 0; i < size; i++) {
+			this.fileNames.push('file' + i + '.java');
+			this.fileNames.push('file' + i + '.cpp');
+			this.fileNames.push('file' + i + '.ts');
+			this.fileNames.push('file' + i + '.json');
+		}
+	}
+
+	private populateDirs(size: number) {
+		for (let i = 0; i < size; i++) {
+			this.directoryNames.push('folder' + i);
+			this.directoryNames.push('common' + i);
+			this.directoryNames.push('browser' + i);
+			this.directoryNames.push('media' + i);
+		}
+	}
+
+	private randomSet(size: number, indexMax: number): Set<number> {
+		let selectedNumbers: Set<number> = new Set();
+
+		while (selectedNumbers.size < size) {
+			const numberSelected = Math.floor(Math.random() * indexMax);
+			selectedNumbers.add(numberSelected);
+		}
+
+		return selectedNumbers;
+	}
+
+	private randomFiles(size: number): Set<string> {
+		const indices = this.randomSet(size, this.fileNames.length);
+		const files: Set<string> = new Set();
+
+		indices.forEach(index => {
+			files.add(this.fileNames[index]);
+		});
+
+		return files;
+	}
+
+	private randomDirs(size: number): Set<string> {
+		const indices = this.randomSet(size, this.directoryNames.length);
+		const dirs: Set<string> = new Set();
+
+		indices.forEach(index => {
+			dirs.add(this.directoryNames[index]);
+		});
+
+		return dirs;
+	}
+
+	private addFilesAndDirectories(path: string, size: number, levels: number) {
+		if (levels === 0) {
+			return;
+		}
+
+		const filesSelected = this.randomFiles(size);
+		const dirsSelected = this.randomDirs(size);
+
+		for (let file of filesSelected) {
+			const filePath = path + file;
+			this.writeFile(Uri.parse(filePath), new Uint8Array(0), { create: true, overwrite: true });
+		}
+
+		for (let dir of dirsSelected) {
+			const dirPath = path + dir + '/';
+			this.createDirectory(Uri.parse(dirPath));
+			this.addFilesAndDirectories(dirPath, Math.floor(Math.random() * 7 + 1), levels - 1);
+		}
+	}
+
 	seed() {
 		this.createDirectory(Uri.parse(`memfs:/sample-folder/`));
 
@@ -123,6 +197,10 @@ export class MemFS implements FileSystemProvider, FileSearchProvider, TextSearch
 		this.writeFile(Uri.parse(`memfs:/sample-folder/xyz/UPPER.txt`), textEncoder.encode('UPPER'), { create: true, overwrite: true });
 		this.writeFile(Uri.parse(`memfs:/sample-folder/xyz/upper.txt`), textEncoder.encode('upper'), { create: true, overwrite: true });
 		this.writeFile(Uri.parse(`memfs:/sample-folder/xyz/def/foo.md`), textEncoder.encode('*MemFS*'), { create: true, overwrite: true });
+
+		this.populateFiles(10);
+		this.populateDirs(10);
+		this.addFilesAndDirectories(`memfs:/sample-folder/`, 7, 5);
 
 		// some files in different encodings
 		this.createDirectory(Uri.parse(`memfs:/sample-folder/encodings/`));
