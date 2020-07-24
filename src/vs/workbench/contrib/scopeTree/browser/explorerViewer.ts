@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import 'vs/css!./media/scopeTreeFileIcon';
 import { IListAccessibilityProvider } from 'vs/base/browser/ui/list/listWidget';
 import * as DOM from 'vs/base/browser/dom';
 import * as glob from 'vs/base/common/glob';
@@ -238,6 +239,21 @@ export interface IFileTemplateData {
 	container: HTMLElement;
 }
 
+class RenderFocusIcon implements IDisposable {
+	public iconContainer: HTMLElement;
+
+	constructor(private stat: ExplorerItem) {
+		this.iconContainer = document.createElement('img');
+		DOM.addClass(this.iconContainer, 'scope-tree-focus-icon');
+		this.iconContainer.id = 'iconContainer_' + this.stat.resource.toString();
+		this.iconContainer.onclick = () => console.log(this.iconContainer.id);
+	}
+
+	dispose() {
+		this.iconContainer.remove();
+	}
+}
+
 export class FilesRenderer implements ICompressibleTreeRenderer<ExplorerItem, FuzzyScore, IFileTemplateData>, IListAccessibilityProvider<ExplorerItem>, IDisposable {
 	static readonly ID = 'file';
 
@@ -290,7 +306,22 @@ export class FilesRenderer implements ICompressibleTreeRenderer<ExplorerItem, Fu
 		// File Label
 		if (!editableData) {
 			templateData.label.element.style.display = 'flex';
-			templateData.elementDisposable = this.renderStat(stat, stat.name, undefined, node.filterData, templateData);
+
+			const disposables = new DisposableStore();
+			disposables.add(this.renderStat(stat, stat.name, undefined, node.filterData, templateData));
+
+			templateData.label.element.style.float = '';
+
+			if (stat.isDirectory) {
+				const focusIcon = new RenderFocusIcon(stat);
+
+				templateData.label.element.style.float = 'left';
+				templateData.label.element.appendChild(focusIcon.iconContainer);
+
+				disposables.add(focusIcon);
+			}
+
+			templateData.elementDisposable = disposables;
 		}
 
 		// Input Box
