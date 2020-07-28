@@ -53,6 +53,8 @@ import { SIDE_BAR_BACKGROUND } from 'vs/workbench/common/theme';
 import { IViewDescriptorService } from 'vs/workbench/common/views';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { IUriIdentityService } from 'vs/workbench/services/uriIdentity/common/uriIdentity';
+import { dirname } from 'vs/base/common/resources';
+import { Codicon } from 'vs/base/common/codicons';
 
 interface IExplorerViewColors extends IColorMapping {
 	listDropBackground?: ColorValue | undefined;
@@ -219,6 +221,20 @@ export class ExplorerView extends ViewPane {
 
 	// Split view methods
 
+	private parentButton: HTMLElement = DOM.$(Codicon.foldUp.cssSelector);
+
+	private renderParentButton(container: HTMLElement) {
+		this.parentButton.style.verticalAlign = 'middle';
+		this.parentButton.onclick = () => {
+			const root = this.tree.getInput() as ExplorerItem;
+			const parentResource = dirname(root.resource);
+
+			this.explorerService.setRoot(parentResource);
+		};
+
+		container.parentElement?.appendChild(this.parentButton);
+	}
+
 	protected renderHeader(container: HTMLElement): void {
 		super.renderHeader(container);
 
@@ -237,6 +253,8 @@ export class ExplorerView extends ViewPane {
 		this._register(this.contextService.onDidChangeWorkspaceName(setHeader));
 		this._register(this.labelService.onDidChangeFormatters(setHeader));
 		setHeader();
+
+		this.renderParentButton(container);
 	}
 
 	protected layoutBody(height: number, width: number): void {
