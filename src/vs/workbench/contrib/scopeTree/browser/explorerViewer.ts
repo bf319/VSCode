@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import 'vs/css!./media/scopeTreeFileIcon';
 import { IListAccessibilityProvider } from 'vs/base/browser/ui/list/listWidget';
 import * as DOM from 'vs/base/browser/dom';
 import * as glob from 'vs/base/common/glob';
@@ -238,6 +239,24 @@ export interface IFileTemplateData {
 	container: HTMLElement;
 }
 
+class RenderFocusIcon implements IDisposable {
+	private _iconContainer: HTMLElement;
+
+	constructor(private stat: ExplorerItem) {
+		this._iconContainer = document.createElement('img');
+		DOM.addClass(this._iconContainer, 'scope-tree-focus-icon');
+		this._iconContainer.id = 'iconContainer_' + this.stat.resource.toString();
+	}
+
+	get iconContainer(): HTMLElement {
+		return this._iconContainer;
+	}
+
+	dispose() {
+		this._iconContainer.remove();
+	}
+}
+
 export class FilesRenderer implements ICompressibleTreeRenderer<ExplorerItem, FuzzyScore, IFileTemplateData>, IListAccessibilityProvider<ExplorerItem>, IDisposable {
 	static readonly ID = 'file';
 
@@ -348,6 +367,7 @@ export class FilesRenderer implements ICompressibleTreeRenderer<ExplorerItem, Fu
 
 	private renderStat(stat: ExplorerItem, label: string | string[], domId: string | undefined, filterData: FuzzyScore | undefined, templateData: IFileTemplateData): IDisposable {
 		templateData.label.element.style.display = 'flex';
+		templateData.label.element.style.float = '';
 		const extraClasses = ['explorer-item'];
 		if (this.explorerService.isCut(stat)) {
 			extraClasses.push('cut');
@@ -362,13 +382,27 @@ export class FilesRenderer implements ICompressibleTreeRenderer<ExplorerItem, Fu
 			domId
 		});
 
-		return templateData.label.onDidRender(() => {
+		const disposables = new DisposableStore();
+		const prevDisposable = templateData.label.onDidRender(() => {
 			try {
 				this.updateWidth(stat);
 			} catch (e) {
 				// noop since the element might no longer be in the tree, no update of width necessery
 			}
 		});
+
+		if (stat.isDirectory) {
+			const focusIcon = new RenderFocusIcon(stat);
+			focusIcon.iconContainer.onclick = () => this.explorerService.setRoot(stat.resource);
+
+			templateData.label.element.style.float = 'left';
+			templateData.label.element.appendChild(focusIcon.iconContainer);
+
+			disposables.add(focusIcon);
+		}
+
+		disposables.add(prevDisposable);
+		return disposables;
 	}
 
 	private renderInputBox(container: HTMLElement, stat: ExplorerItem, editableData: IEditableData): IDisposable {
