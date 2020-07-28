@@ -66,7 +66,6 @@ export interface IExplorerView {
 	setTreeInput(): Promise<void>;
 	itemsCopied(tats: ExplorerItem[], cut: boolean, previousCut: ExplorerItem[] | undefined): void;
 	setEditable(stat: ExplorerItem, isEditing: boolean): Promise<void>;
-	setRoot(resource: URI): void;
 }
 
 export const IExplorerService = createDecorator<IExplorerService>('explorerService');

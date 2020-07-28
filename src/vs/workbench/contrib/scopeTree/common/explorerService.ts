@@ -138,8 +138,10 @@ export class ExplorerService implements IExplorerService {
 		return !!this.cutItems && this.cutItems.indexOf(item) >= 0;
 	}
 
-	public setRoot(resource: URI): void {
-		this.view?.setRoot(resource);
+	setRoot(resource: URI): void {
+		this.model.setRoot(resource).then(async () => {
+			await this.view?.setTreeInput();
+		});
 	}
 
 	getEditable(): { stat: ExplorerItem, data: IEditableData } | undefined {
