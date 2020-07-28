@@ -281,6 +281,22 @@ export class ExplorerView extends ViewPane {
 				this.selectActiveFile(false, true);
 			}
 		}));
+
+		this.tree.onMouseOver(e => {
+			const icon = document.getElementById('iconContainer_' + e.element?.resource.toString());
+
+			if (icon !== null) {
+				icon.style.visibility = 'visible';
+			}
+		});
+
+		this.tree.onMouseOut(e => {
+			const icon = document.getElementById('iconContainer_' + e.element?.resource.toString());
+
+			if (icon !== null) {
+				icon.style.visibility = 'hidden';
+			}
+		});
 	}
 
 	getActions(): IAction[] {
