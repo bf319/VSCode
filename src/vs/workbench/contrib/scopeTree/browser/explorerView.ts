@@ -53,7 +53,7 @@ import { SIDE_BAR_BACKGROUND } from 'vs/workbench/common/theme';
 import { IViewDescriptorService } from 'vs/workbench/common/views';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { IUriIdentityService } from 'vs/workbench/services/uriIdentity/common/uriIdentity';
-import { dirname } from 'vs/base/common/resources';
+import { dirname, basename } from 'vs/base/common/resources';
 import { Codicon } from 'vs/base/common/codicons';
 
 interface IExplorerViewColors extends IColorMapping {
@@ -152,6 +152,7 @@ export class ExplorerView extends ViewPane {
 	private decorationsProvider: ExplorerDecorationsProvider | undefined;
 
 	private parentButton: HTMLElement = DOM.$(Codicon.foldUp.cssSelector);
+	private breadcrumb: HTMLElement = document.createElement('ul');
 
 	constructor(
 		options: IViewPaneOptions,
@@ -225,8 +226,8 @@ export class ExplorerView extends ViewPane {
 
 	private renderParentButton() {
 		this.parentButton.style.verticalAlign = 'middle';
-		this.parentButton.style.paddingLeft = '20px';
 		this.parentButton.style.visibility = 'hidden';
+		this.parentButton.style.paddingRight = '5px';
 		this.parentButton.onclick = () => {
 			const root = this.tree.getInput() as ExplorerItem;
 			const parentResource = dirname(root.resource);
@@ -239,6 +240,51 @@ export class ExplorerView extends ViewPane {
 		const workspaceFolder = this.contextService.getWorkspace().folders.find(folder => folder.uri.toString() === root.toString());
 
 		return workspaceFolder !== undefined;
+	}
+
+	private createBreadcrumb(): void {
+		this.breadcrumb.style.listStyle = 'none';
+		this.breadcrumb.style.backgroundColor = '#eee';
+		this.breadcrumb.style.whiteSpace = 'nowrap';	// Prevent directories with dashes in the name from being displayed on multiple lines
+		this.breadcrumb.style.position = 'relative';
+		this.breadcrumb.style.left = '-20px';
+	}
+
+	private renderBreadcrumb(): void {
+		// Remove all previous children
+		while (this.breadcrumb.firstChild) {
+			this.breadcrumb.removeChild(this.breadcrumb.firstChild);
+		}
+
+		const root: ExplorerItem = this.explorerService.roots[0];
+
+		this.renderBreadcrumbElement(root.resource);
+		this.breadcrumb.insertBefore(this.parentButton, this.breadcrumb.firstChild);	// To display the parentButton and the breadcrumb inline
+	}
+
+	private renderBreadcrumbElement(resource: URI): void {
+		const breadcrumbElement = document.createElement('li');
+		breadcrumbElement.textContent = basename(resource) + '/';
+		breadcrumbElement.style.display = 'inline';
+
+		breadcrumbElement.addEventListener('mouseover', () => {
+			breadcrumbElement.style.color = '#01447e';
+			breadcrumbElement.style.textDecoration = 'underline';
+		});
+
+		breadcrumbElement.addEventListener('mouseout', () => {
+			breadcrumbElement.style.color = '';
+			breadcrumbElement.style.textDecoration = '';
+		});
+
+		breadcrumbElement.onclick = () => this.explorerService.setRoot(resource);
+
+		this.breadcrumb.insertBefore(breadcrumbElement, this.breadcrumb.firstChild);
+
+		if (!this.isWorkspaceRoot(resource)) {
+			const parentResource = dirname(resource);
+			this.renderBreadcrumbElement(parentResource);
+		}
 	}
 
 	protected renderHeader(container: HTMLElement): void {
@@ -270,10 +316,11 @@ export class ExplorerView extends ViewPane {
 		super.renderBody(container);
 
 		this.renderParentButton();
+		this.createBreadcrumb();
 
 		const parentContainer = document.createElement('div');
 		DOM.append(container, parentContainer);
-		parentContainer.appendChild(this.parentButton);
+		parentContainer.appendChild(this.breadcrumb);
 
 		this.treeContainer = DOM.append(parentContainer, DOM.$('.explorer-folders-view'));
 
@@ -673,6 +720,8 @@ export class ExplorerView extends ViewPane {
 			} else {
 				this.parentButton.style.visibility = 'hidden';
 			}
+
+			this.renderBreadcrumb();
 
 			if (Array.isArray(input)) {
 				if (!viewState || previousInput instanceof ExplorerItem) {
