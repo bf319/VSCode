@@ -226,12 +226,19 @@ export class ExplorerView extends ViewPane {
 	private renderParentButton() {
 		this.parentButton.style.verticalAlign = 'middle';
 		this.parentButton.style.paddingLeft = '20px';
+		this.parentButton.style.visibility = 'hidden';
 		this.parentButton.onclick = () => {
 			const root = this.tree.getInput() as ExplorerItem;
 			const parentResource = dirname(root.resource);
 
 			this.explorerService.setRoot(parentResource);
 		};
+	}
+
+	private isWorkspaceRoot(root: URI): boolean {
+		const workspaceFolder = this.contextService.getWorkspace().folders.find(folder => folder.uri.toString() === root.toString());
+
+		return workspaceFolder !== undefined;
 	}
 
 	protected renderHeader(container: HTMLElement): void {
@@ -661,6 +668,12 @@ export class ExplorerView extends ViewPane {
 
 		const previousInput = this.tree.getInput();
 		const promise = this.tree.setInput(input, viewState).then(() => {
+			if (!this.isWorkspaceRoot((input as ExplorerItem).resource)) {
+				this.parentButton.style.visibility = 'visible';
+			} else {
+				this.parentButton.style.visibility = 'hidden';
+			}
+
 			if (Array.isArray(input)) {
 				if (!viewState || previousInput instanceof ExplorerItem) {
 					// There is no view state for this workspace, expand all roots. Or we transitioned from a folder workspace.
