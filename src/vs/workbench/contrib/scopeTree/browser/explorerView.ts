@@ -151,6 +151,8 @@ export class ExplorerView extends ViewPane {
 	private actions: IAction[] | undefined;
 	private decorationsProvider: ExplorerDecorationsProvider | undefined;
 
+	private parentButton: HTMLElement = DOM.$(Codicon.foldUp.cssSelector);
+
 	constructor(
 		options: IViewPaneOptions,
 		@IContextMenuService contextMenuService: IContextMenuService,
@@ -221,18 +223,15 @@ export class ExplorerView extends ViewPane {
 
 	// Split view methods
 
-	private parentButton: HTMLElement = DOM.$(Codicon.foldUp.cssSelector);
-
-	private renderParentButton(container: HTMLElement) {
+	private renderParentButton() {
 		this.parentButton.style.verticalAlign = 'middle';
+		this.parentButton.style.paddingLeft = '20px';
 		this.parentButton.onclick = () => {
 			const root = this.tree.getInput() as ExplorerItem;
 			const parentResource = dirname(root.resource);
 
 			this.explorerService.setRoot(parentResource);
 		};
-
-		container.parentElement?.appendChild(this.parentButton);
 	}
 
 	protected renderHeader(container: HTMLElement): void {
@@ -253,8 +252,6 @@ export class ExplorerView extends ViewPane {
 		this._register(this.contextService.onDidChangeWorkspaceName(setHeader));
 		this._register(this.labelService.onDidChangeFormatters(setHeader));
 		setHeader();
-
-		this.renderParentButton(container);
 	}
 
 	protected layoutBody(height: number, width: number): void {
@@ -265,7 +262,13 @@ export class ExplorerView extends ViewPane {
 	renderBody(container: HTMLElement): void {
 		super.renderBody(container);
 
-		this.treeContainer = DOM.append(container, DOM.$('.explorer-folders-view'));
+		this.renderParentButton();
+
+		const parentContainer = document.createElement('div');
+		DOM.append(container, parentContainer);
+		parentContainer.appendChild(this.parentButton);
+
+		this.treeContainer = DOM.append(parentContainer, DOM.$('.explorer-folders-view'));
 
 		this.styleElement = DOM.createStyleSheet(this.treeContainer);
 		attachStyler<IExplorerViewColors>(this.themeService, { listDropBackground }, this.styleListDropBackground.bind(this));
