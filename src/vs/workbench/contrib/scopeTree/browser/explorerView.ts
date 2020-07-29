@@ -53,6 +53,8 @@ import { SIDE_BAR_BACKGROUND } from 'vs/workbench/common/theme';
 import { IViewDescriptorService } from 'vs/workbench/common/views';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { IUriIdentityService } from 'vs/workbench/services/uriIdentity/common/uriIdentity';
+import { dirname } from 'vs/base/common/resources';
+import { Codicon } from 'vs/base/common/codicons';
 
 interface IExplorerViewColors extends IColorMapping {
 	listDropBackground?: ColorValue | undefined;
@@ -149,6 +151,8 @@ export class ExplorerView extends ViewPane {
 	private actions: IAction[] | undefined;
 	private decorationsProvider: ExplorerDecorationsProvider | undefined;
 
+	private parentButton: HTMLElement = DOM.$(Codicon.foldUp.cssSelector);
+
 	constructor(
 		options: IViewPaneOptions,
 		@IContextMenuService contextMenuService: IContextMenuService,
@@ -219,6 +223,17 @@ export class ExplorerView extends ViewPane {
 
 	// Split view methods
 
+	private renderParentButton() {
+		this.parentButton.style.verticalAlign = 'middle';
+		this.parentButton.style.paddingLeft = '20px';
+		this.parentButton.onclick = () => {
+			const root = this.tree.getInput() as ExplorerItem;
+			const parentResource = dirname(root.resource);
+
+			this.explorerService.setRoot(parentResource);
+		};
+	}
+
 	protected renderHeader(container: HTMLElement): void {
 		super.renderHeader(container);
 
@@ -247,7 +262,13 @@ export class ExplorerView extends ViewPane {
 	renderBody(container: HTMLElement): void {
 		super.renderBody(container);
 
-		this.treeContainer = DOM.append(container, DOM.$('.explorer-folders-view'));
+		this.renderParentButton();
+
+		const parentContainer = document.createElement('div');
+		DOM.append(container, parentContainer);
+		parentContainer.appendChild(this.parentButton);
+
+		this.treeContainer = DOM.append(parentContainer, DOM.$('.explorer-folders-view'));
 
 		this.styleElement = DOM.createStyleSheet(this.treeContainer);
 		attachStyler<IExplorerViewColors>(this.themeService, { listDropBackground }, this.styleListDropBackground.bind(this));
