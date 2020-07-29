@@ -236,15 +236,9 @@ export class ExplorerView extends ViewPane {
 	}
 
 	private isWorkspaceRoot(root: URI): boolean {
-		let isRoot = false;
+		const workspaceFolder = this.contextService.getWorkspace().folders.find(folder => folder.uri.toString() === root.toString());
 
-		this.contextService.getWorkspace().folders.forEach(folder => {
-			if (folder.uri.toString() === root.toString()) {
-				isRoot = true;
-			}
-		});
-
-		return isRoot;
+		return workspaceFolder !== undefined;
 	}
 
 	protected renderHeader(container: HTMLElement): void {
@@ -676,8 +670,7 @@ export class ExplorerView extends ViewPane {
 		const promise = this.tree.setInput(input, viewState).then(() => {
 			if (!this.isWorkspaceRoot((input as ExplorerItem).resource)) {
 				this.parentButton.style.visibility = 'visible';
-			}
-			else {
+			} else {
 				this.parentButton.style.visibility = 'hidden';
 			}
 
