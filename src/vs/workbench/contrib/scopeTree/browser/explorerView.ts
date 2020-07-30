@@ -55,6 +55,7 @@ import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { IUriIdentityService } from 'vs/workbench/services/uriIdentity/common/uriIdentity';
 import { dirname, basename } from 'vs/base/common/resources';
 import { Codicon } from 'vs/base/common/codicons';
+import 'vs/css!./media/treeNavigation';
 
 interface IExplorerViewColors extends IColorMapping {
 	listDropBackground?: ColorValue | undefined;
@@ -225,9 +226,8 @@ export class ExplorerView extends ViewPane {
 	// Split view methods
 
 	private renderParentButton() {
-		this.parentButton.style.verticalAlign = 'middle';
-		this.parentButton.style.visibility = 'hidden';
-		this.parentButton.style.paddingRight = '5px';
+		DOM.addClass(this.parentButton, 'parent-button');
+
 		this.parentButton.onclick = () => {
 			const root = this.tree.getInput() as ExplorerItem;
 			const parentResource = dirname(root.resource);
@@ -237,47 +237,34 @@ export class ExplorerView extends ViewPane {
 	}
 
 	private isWorkspaceRoot(root: URI): boolean {
-		const workspaceFolder = this.contextService.getWorkspace().folders.find(folder => folder.uri.toString() === root.toString());
-
-		return workspaceFolder !== undefined;
-	}
-
-	private createBreadcrumb(): void {
-		this.breadcrumb.style.listStyle = 'none';
-		this.breadcrumb.style.backgroundColor = '#eee';
-		this.breadcrumb.style.whiteSpace = 'nowrap';	// Prevent directories with dashes in the name from being displayed on multiple lines
-		this.breadcrumb.style.position = 'relative';
-		this.breadcrumb.style.left = '-20px';
+		return this.contextService.getWorkspace().folders.find(folder => folder.uri.toString() === root.toString()) !== undefined;
 	}
 
 	private renderBreadcrumb(): void {
-		// Remove all previous children
-		while (this.breadcrumb.firstChild) {
-			this.breadcrumb.removeChild(this.breadcrumb.firstChild);
-		}
-
 		const root: ExplorerItem = this.explorerService.roots[0];
 
+		DOM.clearNode(this.breadcrumb);
 		this.renderBreadcrumbElement(root.resource);
-		this.breadcrumb.insertBefore(this.parentButton, this.breadcrumb.firstChild);	// To display the parentButton and the breadcrumb inline
+		this.breadcrumb.insertBefore(this.parentButton, this.breadcrumb.firstChild);
 	}
 
 	private renderBreadcrumbElement(resource: URI): void {
 		const breadcrumbElement = document.createElement('li');
 		breadcrumbElement.textContent = basename(resource) + '/';
-		breadcrumbElement.style.display = 'inline';
 
-		breadcrumbElement.addEventListener('mouseover', () => {
-			breadcrumbElement.style.color = '#01447e';
-			breadcrumbElement.style.textDecoration = 'underline';
+		DOM.addClass(breadcrumbElement, 'breadcrumb-element');
+
+		DOM.addDisposableListener(breadcrumbElement, DOM.EventType.MOUSE_OVER, () => {
+			breadcrumbElement.classList.replace('breadcrumb-element', 'breadcrumb-element-emphasized');
 		});
 
-		breadcrumbElement.addEventListener('mouseout', () => {
-			breadcrumbElement.style.color = '';
-			breadcrumbElement.style.textDecoration = '';
+		DOM.addDisposableListener(breadcrumbElement, DOM.EventType.MOUSE_OUT, () => {
+			breadcrumbElement.classList.replace('breadcrumb-element-emphasized', 'breadcrumb-element');
 		});
 
-		breadcrumbElement.onclick = () => this.explorerService.setRoot(resource);
+		DOM.addDisposableListener(breadcrumbElement, DOM.EventType.CLICK, () => {
+			this.explorerService.setRoot(resource);
+		});
 
 		this.breadcrumb.insertBefore(breadcrumbElement, this.breadcrumb.firstChild);
 
@@ -314,11 +301,11 @@ export class ExplorerView extends ViewPane {
 
 	renderBody(container: HTMLElement): void {
 		super.renderBody(container);
-
 		this.renderParentButton();
-		this.createBreadcrumb();
 
 		const parentContainer = document.createElement('div');
+
+		DOM.addClass(this.breadcrumb, 'breadcrumb-file-tree');
 		DOM.append(container, parentContainer);
 		parentContainer.appendChild(this.breadcrumb);
 
@@ -357,21 +344,21 @@ export class ExplorerView extends ViewPane {
 			}
 		}));
 
-		this.tree.onMouseOver(e => {
+		this._register(this.tree.onMouseOver(e => {
 			const icon = document.getElementById('iconContainer_' + e.element?.resource.toString());
 
 			if (icon !== null) {
 				icon.style.visibility = 'visible';
 			}
-		});
+		}));
 
-		this.tree.onMouseOut(e => {
+		this._register(this.tree.onMouseOut(e => {
 			const icon = document.getElementById('iconContainer_' + e.element?.resource.toString());
 
 			if (icon !== null) {
 				icon.style.visibility = 'hidden';
 			}
-		});
+		}));
 	}
 
 	getActions(): IAction[] {
