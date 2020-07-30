@@ -53,7 +53,7 @@ import { SIDE_BAR_BACKGROUND } from 'vs/workbench/common/theme';
 import { IViewDescriptorService } from 'vs/workbench/common/views';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { IUriIdentityService } from 'vs/workbench/services/uriIdentity/common/uriIdentity';
-import { dirname } from 'vs/base/common/resources';
+import { dirname, basename } from 'vs/base/common/resources';
 import { Codicon } from 'vs/base/common/codicons';
 
 interface IExplorerViewColors extends IColorMapping {
@@ -226,7 +226,7 @@ export class ExplorerView extends ViewPane {
 	private renderParentButton() {
 		this.parentButton.style.verticalAlign = 'middle';
 		this.parentButton.style.paddingLeft = '20px';
-		this.parentButton.style.visibility = 'hidden';
+		this.parentButton.style.visibility = 'visible';
 		this.parentButton.onclick = () => {
 			const root = this.tree.getInput() as ExplorerItem;
 			const parentResource = dirname(root.resource);
@@ -291,8 +291,44 @@ export class ExplorerView extends ViewPane {
 		this.onConfigurationUpdated(configuration);
 
 		// When the explorer viewer is loaded, listen to changes to the editor input
-		this._register(this.editorService.onDidActiveEditorChange(() => {
-			this.selectActiveFile(true);
+		this._register(this.editorService.onDidActiveEditorChange(async () => {
+			// this.selectActiveFile(true);
+
+			let resource = this.editorService.activeEditor?.resource;
+
+			if (resource === undefined) {
+				return;
+			}
+
+			if (this.isChildOfCurrentRoot(resource)) {
+				let ancestors: URI[] = [];
+				let root = this.tree.getInput() as ExplorerItem;
+
+				while (resource.toString() !== root.resource.toString()) {
+					ancestors.push(resource);
+
+					resource = dirname(resource);
+				}
+
+				ancestors = ancestors.reverse();
+
+				for (let i = 0; i < ancestors.length; i++) {
+					const child = root.getChild(basename(ancestors[i]));
+					console.log(root);
+
+					if (child !== undefined) {
+						await this.tree.expand(child);
+						root = child;
+					}
+				}
+
+			} else {
+				const parentResource = dirname(resource);
+
+				this.explorerService.setRoot(parentResource);
+			}
+
+			this.selectActiveFile();
 		}));
 
 		// Also handle configuration updates
@@ -671,7 +707,7 @@ export class ExplorerView extends ViewPane {
 			if (!this.isWorkspaceRoot((input as ExplorerItem).resource)) {
 				this.parentButton.style.visibility = 'visible';
 			} else {
-				this.parentButton.style.visibility = 'hidden';
+				this.parentButton.style.visibility = 'visible';
 			}
 
 			if (Array.isArray(input)) {
@@ -871,6 +907,26 @@ export class ExplorerView extends ViewPane {
 			this.dragHandler.dispose();
 		}
 		super.dispose();
+	}
+
+	private isChildOfCurrentRoot(resource: URI): boolean {
+		let currentRoot = this.tree.getInput();
+
+		if (currentRoot === undefined) {
+			return false;
+		}
+
+		currentRoot = currentRoot as ExplorerItem;
+
+		while (!this.isWorkspaceRoot(resource)) {
+			if (resource.toString() === currentRoot.resource.toString()) {
+				return true;
+			}
+
+			resource = dirname(resource);
+		}
+
+		return resource.toString() === currentRoot.resource.toString();
 	}
 }
 
