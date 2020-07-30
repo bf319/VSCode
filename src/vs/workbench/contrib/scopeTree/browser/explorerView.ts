@@ -292,8 +292,6 @@ export class ExplorerView extends ViewPane {
 
 		// When the explorer viewer is loaded, listen to changes to the editor input
 		this._register(this.editorService.onDidActiveEditorChange(async () => {
-			// this.selectActiveFile(true);
-
 			let resource = this.editorService.activeEditor?.resource;
 
 			if (resource === undefined) {
@@ -301,34 +299,12 @@ export class ExplorerView extends ViewPane {
 			}
 
 			if (this.isChildOfCurrentRoot(resource)) {
-				let ancestors: URI[] = [];
-				let root = this.tree.getInput() as ExplorerItem;
-
-				while (resource.toString() !== root.resource.toString()) {
-					ancestors.push(resource);
-
-					resource = dirname(resource);
-				}
-
-				ancestors = ancestors.reverse();
-
-				for (let i = 0; i < ancestors.length; i++) {
-					const child = root.getChild(basename(ancestors[i]));
-					console.log(root);
-
-					if (child !== undefined) {
-						await this.tree.expand(child);
-						root = child;
-					}
-				}
-
+				await this.expandAncestorsToRoot(resource);
 			} else {
-				const parentResource = dirname(resource);
-
-				this.explorerService.setRoot(parentResource);
+				this.explorerService.setRoot(dirname(resource));
 			}
 
-			this.selectActiveFile();
+			// setTimeout(() => this.selectActiveFile(), 2000);
 		}));
 
 		// Also handle configuration updates
@@ -927,6 +903,27 @@ export class ExplorerView extends ViewPane {
 		}
 
 		return resource.toString() === currentRoot.resource.toString();
+	}
+
+	private async expandAncestorsToRoot(resource: URI): Promise<void> {
+		let ancestors: URI[] = [];
+		let root = this.tree.getInput() as ExplorerItem;
+
+		while (resource.toString() !== root.resource.toString()) {
+			ancestors.push(resource);
+			resource = dirname(resource);
+		}
+
+		ancestors = ancestors.reverse();	// Expand directories top to bottom
+
+		for (let i = 0; i < ancestors.length; i++) {
+			const child = root.getChild(basename(ancestors[i]));
+
+			if (child !== undefined) {
+				await this.tree.expand(child);
+				root = child;
+			}
+		}
 	}
 }
 
