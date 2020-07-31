@@ -329,7 +329,7 @@ export class ExplorerView extends ViewPane {
 
 		// When the explorer viewer is loaded, listen to changes to the editor input
 		this._register(this.editorService.onDidActiveEditorChange(async () => {
-			let resource = this.getActiveFile();
+			const resource = this.getActiveFile();
 
 			if (!resource) {
 				return;
@@ -488,7 +488,7 @@ export class ExplorerView extends ViewPane {
 		for (let i = 0; i < ancestors.length; i++) {
 			const child = root.getChild(basename(ancestors[i]));
 
-			if (child !== undefined) {
+			if (child) {
 				await this.tree.expand(child);
 				root = child;
 			}
