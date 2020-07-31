@@ -45,7 +45,7 @@ import { IClipboardService } from 'vs/platform/clipboard/common/clipboardService
 import { withNullAsUndefined } from 'vs/base/common/types';
 import { IFileService, FileSystemProviderCapabilities } from 'vs/platform/files/common/files';
 import { DisposableStore, IDisposable } from 'vs/base/common/lifecycle';
-import { Event } from 'vs/base/common/event';
+import { Event, Emitter } from 'vs/base/common/event';
 import { attachStyler, IColorMapping } from 'vs/platform/theme/common/styler';
 import { ColorValue, listDropBackground } from 'vs/platform/theme/common/colorRegistry';
 import { Color } from 'vs/base/common/color';
@@ -154,6 +154,9 @@ export class ExplorerView extends ViewPane {
 
 	private parentButton: HTMLElement = DOM.$(Codicon.foldUp.cssSelector);
 	private breadcrumb: HTMLElement = document.createElement('ul');
+
+	private _onDidChangeRoot = new Emitter<void>();
+	readonly onDidChangeRoot: Event<void> = this._onDidChangeRoot.event;
 
 	constructor(
 		options: IViewPaneOptions,
@@ -325,8 +328,27 @@ export class ExplorerView extends ViewPane {
 		this.onConfigurationUpdated(configuration);
 
 		// When the explorer viewer is loaded, listen to changes to the editor input
-		this._register(this.editorService.onDidActiveEditorChange(() => {
-			this.selectActiveFile(true);
+		this._register(this.editorService.onDidActiveEditorChange(async () => {
+			let resource = this.getActiveFile();
+
+			if (!resource) {
+				return;
+			}
+
+			if (this.isChildOfCurrentRoot(resource)) {
+				await this.expandAncestorsToRoot(resource);
+				this.selectActiveFile();
+			} else {
+				this.explorerService.setRoot(dirname(resource));
+			}
+		}));
+
+		this._register(this.onDidChangeRoot(async () => {
+			const resource = this.getActiveFile();
+
+			if (resource && this.isChildOfCurrentRoot(resource)) {
+				await this.selectResource(resource, true);
+			}
 		}));
 
 		// Also handle configuration updates
@@ -428,6 +450,47 @@ export class ExplorerView extends ViewPane {
 			} else if (deselect) {
 				this.tree.setSelection([]);
 				this.tree.setFocus([]);
+			}
+		}
+	}
+
+	private isChildOfCurrentRoot(resource: URI): boolean {
+		let currentRoot = this.tree.getInput();
+
+		if (!currentRoot) {
+			return false;
+		}
+
+		currentRoot = currentRoot as ExplorerItem;
+
+		while (!this.isWorkspaceRoot(resource)) {
+			if (resource.toString() === currentRoot.resource.toString()) {
+				return true;
+			}
+
+			resource = dirname(resource);
+		}
+
+		return resource.toString() === currentRoot.resource.toString();
+	}
+
+	private async expandAncestorsToRoot(resource: URI): Promise<void> {
+		let ancestors: URI[] = [];
+		let root = this.tree.getInput() as ExplorerItem;
+
+		while (resource.toString() !== root.resource.toString()) {
+			ancestors.push(resource);
+			resource = dirname(resource);
+		}
+
+		ancestors = ancestors.reverse();	// Expand directories top to bottom
+
+		for (let i = 0; i < ancestors.length; i++) {
+			const child = root.getChild(basename(ancestors[i]));
+
+			if (child !== undefined) {
+				await this.tree.expand(child);
+				root = child;
 			}
 		}
 	}
@@ -709,6 +772,7 @@ export class ExplorerView extends ViewPane {
 			}
 
 			this.renderBreadcrumb();
+			this._onDidChangeRoot.fire();
 
 			if (Array.isArray(input)) {
 				if (!viewState || previousInput instanceof ExplorerItem) {
