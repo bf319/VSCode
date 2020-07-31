@@ -667,12 +667,16 @@ export class ExplorerView extends ViewPane {
 		}
 
 		const previousInput = this.tree.getInput();
-		const promise = this.tree.setInput(input, viewState).then(() => {
+		const promise = this.tree.setInput(input, viewState).then(async () => {
 			if (!this.isWorkspaceRoot((input as ExplorerItem).resource)) {
 				this.parentButton.style.visibility = 'visible';
 			} else {
 				this.parentButton.style.visibility = 'hidden';
 			}
+
+			// if (input instanceof ExplorerItem) {
+			// 	await this.keepExpandedChildren(input);
+			// }
 
 			if (Array.isArray(input)) {
 				if (!viewState || previousInput instanceof ExplorerItem) {
@@ -872,6 +876,35 @@ export class ExplorerView extends ViewPane {
 		}
 		super.dispose();
 	}
+
+	// private findExpandedChildren(root: ExplorerItem): ExplorerItem[] {
+	// 	let expandedStats: ExplorerItem[] = [];
+	// 	const addRoot: boolean = root !== this.tree.getInput() && this.tree.isCollapsed(root);	// Cannot check this.tree.isCollapsed for the actual root
+
+	// 	if (addRoot) {
+	// 		expandedStats.push(root);
+	// 	}
+
+	// 	for (let child of Array.from(root.children.values())) {
+	// 		expandedStats = expandedStats.concat(this.findExpandedChildren(child));
+	// 	}
+
+	// 	return expandedStats;
+	// }
+
+	// private async keepExpandedChildren(root: ExplorerItem): Promise<void> {
+	// 	if (!this.tree || !this.tree.hasNode(root) || !this.tree.getInput()) {
+	// 		return;
+	// 	}
+
+	// 	await this.tree.expand(root);
+
+	// 	let toExpand = this.findExpandedChildren(root);
+
+	// 	for (let item of toExpand) {
+	// 		await this.tree.expand(item);
+	// 	}
+	// }
 }
 
 function createFileIconThemableTreeContainerScope(container: HTMLElement, themeService: IThemeService): IDisposable {
