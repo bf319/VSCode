@@ -53,8 +53,9 @@ import { SIDE_BAR_BACKGROUND } from 'vs/workbench/common/theme';
 import { IViewDescriptorService } from 'vs/workbench/common/views';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { IUriIdentityService } from 'vs/workbench/services/uriIdentity/common/uriIdentity';
-import { dirname } from 'vs/base/common/resources';
+import { dirname, basename } from 'vs/base/common/resources';
 import { Codicon } from 'vs/base/common/codicons';
+import 'vs/css!./media/treeNavigation';
 
 interface IExplorerViewColors extends IColorMapping {
 	listDropBackground?: ColorValue | undefined;
@@ -152,6 +153,7 @@ export class ExplorerView extends ViewPane {
 	private decorationsProvider: ExplorerDecorationsProvider | undefined;
 
 	private parentButton: HTMLElement = DOM.$(Codicon.foldUp.cssSelector);
+	private breadcrumb: HTMLElement = document.createElement('ul');
 
 	constructor(
 		options: IViewPaneOptions,
@@ -224,9 +226,8 @@ export class ExplorerView extends ViewPane {
 	// Split view methods
 
 	private renderParentButton() {
-		this.parentButton.style.verticalAlign = 'middle';
-		this.parentButton.style.paddingLeft = '20px';
-		this.parentButton.style.visibility = 'hidden';
+		DOM.addClass(this.parentButton, 'parent-button');
+
 		this.parentButton.onclick = () => {
 			const root = this.tree.getInput() as ExplorerItem;
 			const parentResource = dirname(root.resource);
@@ -236,9 +237,41 @@ export class ExplorerView extends ViewPane {
 	}
 
 	private isWorkspaceRoot(root: URI): boolean {
-		const workspaceFolder = this.contextService.getWorkspace().folders.find(folder => folder.uri.toString() === root.toString());
+		return this.contextService.getWorkspace().folders.find(folder => folder.uri.toString() === root.toString()) !== undefined;
+	}
 
-		return workspaceFolder !== undefined;
+	private renderBreadcrumb(): void {
+		const root: ExplorerItem = this.explorerService.roots[0];
+
+		DOM.clearNode(this.breadcrumb);
+		this.renderBreadcrumbElement(root.resource);
+		this.breadcrumb.insertBefore(this.parentButton, this.breadcrumb.firstChild);
+	}
+
+	private renderBreadcrumbElement(resource: URI): void {
+		const breadcrumbElement = document.createElement('li');
+		breadcrumbElement.textContent = basename(resource) + '/';
+
+		DOM.addClass(breadcrumbElement, 'breadcrumb-element');
+
+		DOM.addDisposableListener(breadcrumbElement, DOM.EventType.MOUSE_OVER, () => {
+			breadcrumbElement.classList.replace('breadcrumb-element', 'breadcrumb-element-emphasized');
+		});
+
+		DOM.addDisposableListener(breadcrumbElement, DOM.EventType.MOUSE_OUT, () => {
+			breadcrumbElement.classList.replace('breadcrumb-element-emphasized', 'breadcrumb-element');
+		});
+
+		DOM.addDisposableListener(breadcrumbElement, DOM.EventType.CLICK, () => {
+			this.explorerService.setRoot(resource);
+		});
+
+		this.breadcrumb.insertBefore(breadcrumbElement, this.breadcrumb.firstChild);
+
+		if (!this.isWorkspaceRoot(resource)) {
+			const parentResource = dirname(resource);
+			this.renderBreadcrumbElement(parentResource);
+		}
 	}
 
 	protected renderHeader(container: HTMLElement): void {
@@ -268,12 +301,13 @@ export class ExplorerView extends ViewPane {
 
 	renderBody(container: HTMLElement): void {
 		super.renderBody(container);
-
 		this.renderParentButton();
 
 		const parentContainer = document.createElement('div');
+
+		DOM.addClass(this.breadcrumb, 'breadcrumb-file-tree');
 		DOM.append(container, parentContainer);
-		parentContainer.appendChild(this.parentButton);
+		parentContainer.appendChild(this.breadcrumb);
 
 		this.treeContainer = DOM.append(parentContainer, DOM.$('.explorer-folders-view'));
 
@@ -310,21 +344,21 @@ export class ExplorerView extends ViewPane {
 			}
 		}));
 
-		this.tree.onMouseOver(e => {
+		this._register(this.tree.onMouseOver(e => {
 			const icon = document.getElementById('iconContainer_' + e.element?.resource.toString());
 
 			if (icon !== null) {
 				icon.style.visibility = 'visible';
 			}
-		});
+		}));
 
-		this.tree.onMouseOut(e => {
+		this._register(this.tree.onMouseOut(e => {
 			const icon = document.getElementById('iconContainer_' + e.element?.resource.toString());
 
 			if (icon !== null) {
 				icon.style.visibility = 'hidden';
 			}
-		});
+		}));
 	}
 
 	getActions(): IAction[] {
@@ -673,6 +707,8 @@ export class ExplorerView extends ViewPane {
 			} else {
 				this.parentButton.style.visibility = 'hidden';
 			}
+
+			this.renderBreadcrumb();
 
 			if (Array.isArray(input)) {
 				if (!viewState || previousInput instanceof ExplorerItem) {
