@@ -56,6 +56,7 @@ import { IUriIdentityService } from 'vs/workbench/services/uriIdentity/common/ur
 import { dirname, basename } from 'vs/base/common/resources';
 import { Codicon } from 'vs/base/common/codicons';
 import 'vs/css!./media/treeNavigation';
+import { BreadcrumbsPicker } from 'vs/workbench/browser/parts/editor/breadcrumbsPicker';
 
 interface IExplorerViewColors extends IColorMapping {
 	listDropBackground?: ColorValue | undefined;
@@ -358,6 +359,10 @@ export class ExplorerView extends ViewPane {
 			if (icon !== null) {
 				icon.style.visibility = 'hidden';
 			}
+		}));
+
+		this._register(BreadcrumbsPicker.onClickedBreadcrumbFocusIcon(e => {
+			this.explorerService.setRoot(e);
 		}));
 	}
 

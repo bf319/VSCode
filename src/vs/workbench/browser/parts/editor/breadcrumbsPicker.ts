@@ -30,6 +30,7 @@ import { IFileIconTheme, IThemeService } from 'vs/platform/theme/common/themeSer
 import { IListAccessibilityProvider } from 'vs/base/browser/ui/list/listWidget';
 import { IModeService } from 'vs/editor/common/services/modeService';
 import { localize } from 'vs/nls';
+import 'vs/css!./media/scopeTreeFileIcon';
 
 export function createBreadcrumbsPicker(instantiationService: IInstantiationService, parent: HTMLElement, element: BreadcrumbElement): BreadcrumbsPicker {
 	return element instanceof FileElement
@@ -67,6 +68,9 @@ export abstract class BreadcrumbsPicker {
 
 	private readonly _onDidFocusElement = new Emitter<SelectEvent>();
 	readonly onDidFocusElement: Event<SelectEvent> = this._onDidFocusElement.event;
+
+	protected static readonly _onClickedBreadcrumbFocusIcon = new Emitter<URI>();
+	public static onClickedBreadcrumbFocusIcon: Event<URI> = BreadcrumbsPicker._onClickedBreadcrumbFocusIcon.event;
 
 	constructor(
 		parent: HTMLElement,
@@ -259,6 +263,21 @@ class FileRenderer implements ITreeRenderer<IFileStat | IWorkspaceFolder, FuzzyS
 			matches: createMatches(node.filterData),
 			extraClasses: ['picker-item']
 		});
+		templateData.element.style.float = '';
+
+		const iconContainer = document.createElement('img');
+		iconContainer.className = 'scope-tree-focus-icon';
+		iconContainer.id = 'breadcrumbFocusIconContainer_' + resource.toString();
+
+		const removePreviousIcon = templateData.element.lastChild;
+		if (removePreviousIcon && (<HTMLElement>removePreviousIcon).className === 'scope-tree-focus-icon') {
+			templateData.element.removeChild(removePreviousIcon);
+		}
+
+		if (fileKind !== FileKind.FILE) {
+			templateData.element.style.float = 'left';
+			templateData.element.appendChild(iconContainer);
+		}
 	}
 
 	disposeTemplate(templateData: IResourceLabel): void {
@@ -386,7 +405,7 @@ export class BreadcrumbsFilePicker extends BreadcrumbsPicker {
 		const labels = this._instantiationService.createInstance(ResourceLabels, DEFAULT_LABELS_CONTAINER /* TODO@Jo visibility propagation */);
 		this._disposables.add(labels);
 
-		return <WorkbenchAsyncDataTree<IWorkspace | URI, IWorkspaceFolder | IFileStat, FuzzyScore>>this._instantiationService.createInstance(
+		const createdTree = <WorkbenchAsyncDataTree<IWorkspace | URI, IWorkspaceFolder | IFileStat, FuzzyScore>>this._instantiationService.createInstance(
 			WorkbenchAsyncDataTree,
 			'BreadcrumbsFilePicker',
 			container,
@@ -404,6 +423,31 @@ export class BreadcrumbsFilePicker extends BreadcrumbsPicker {
 					listBackground: breadcrumbsPickerBackground
 				},
 			});
+
+		this._disposables.add(createdTree.onMouseOver(e => {
+			const element = e.element;
+			if (element) {
+				const icon = document.getElementById('breadcrumbFocusIconContainer_' + (element as IFileStat).resource.toString());
+				if (icon) {
+					icon.style.visibility = 'visible';
+					icon.onclick = () => {
+						let resource = (element as IFileStat).resource;
+						BreadcrumbsPicker._onClickedBreadcrumbFocusIcon.fire(resource);
+					};
+				}
+			}
+		}));
+
+		this._disposables.add(createdTree.onMouseOut(e => {
+			if (e.element) {
+				const icon = document.getElementById('breadcrumbFocusIconContainer_' + (e.element as IFileStat).resource.toString());
+				if (icon) {
+					icon.style.visibility = 'hidden';
+				}
+			}
+		}));
+
+		return createdTree;
 	}
 
 	_setInput(element: BreadcrumbElement): Promise<void> {
