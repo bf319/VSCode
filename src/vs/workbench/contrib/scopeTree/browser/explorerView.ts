@@ -330,7 +330,6 @@ export class ExplorerView extends ViewPane {
 		// When the explorer viewer is loaded, listen to changes to the editor input
 		this._register(this.editorService.onDidActiveEditorChange(async () => {
 			const resource = this.getActiveFile();
-
 			if (!resource) {
 				return;
 			}
@@ -345,7 +344,6 @@ export class ExplorerView extends ViewPane {
 
 		this._register(this.onDidChangeRoot(async () => {
 			const resource = this.getActiveFile();
-
 			if (resource && this.isChildOfCurrentRoot(resource)) {
 				await this.selectResource(resource, true);
 			}
@@ -368,7 +366,6 @@ export class ExplorerView extends ViewPane {
 
 		this._register(this.tree.onMouseOver(e => {
 			const icon = document.getElementById('iconContainer_' + e.element?.resource.toString());
-
 			if (icon !== null) {
 				icon.style.visibility = 'visible';
 			}
@@ -376,7 +373,6 @@ export class ExplorerView extends ViewPane {
 
 		this._register(this.tree.onMouseOut(e => {
 			const icon = document.getElementById('iconContainer_' + e.element?.resource.toString());
-
 			if (icon !== null) {
 				icon.style.visibility = 'hidden';
 			}
@@ -455,39 +451,37 @@ export class ExplorerView extends ViewPane {
 	}
 
 	private isChildOfCurrentRoot(resource: URI): boolean {
-		let currentRoot = this.tree.getInput();
-
+		const currentRoot = this.tree.getInput() as ExplorerItem;
 		if (!currentRoot) {
 			return false;
 		}
 
-		currentRoot = currentRoot as ExplorerItem;
-
-		while (!this.isWorkspaceRoot(resource)) {
-			if (resource.toString() === currentRoot.resource.toString()) {
+		let copyOfResource: URI = resource;
+		while (!this.isWorkspaceRoot(copyOfResource)) {
+			if (copyOfResource.toString() === currentRoot.resource.toString()) {
 				return true;
 			}
 
-			resource = dirname(resource);
+			copyOfResource = dirname(copyOfResource);
 		}
 
-		return resource.toString() === currentRoot.resource.toString();
+		return copyOfResource.toString() === currentRoot.resource.toString();
 	}
 
 	private async expandAncestorsToRoot(resource: URI): Promise<void> {
-		let ancestors: URI[] = [];
+		const ancestors: URI[] = [];
+		let findAncestor: URI = resource;
 		let root = this.tree.getInput() as ExplorerItem;
 
-		while (resource.toString() !== root.resource.toString()) {
-			ancestors.push(resource);
-			resource = dirname(resource);
+		while (findAncestor.toString() !== root.resource.toString()) {
+			ancestors.push(findAncestor);
+			findAncestor = dirname(findAncestor);
 		}
 
-		ancestors = ancestors.reverse();	// Expand directories top to bottom
+		ancestors.reverse();
 
 		for (let i = 0; i < ancestors.length; i++) {
 			const child = root.getChild(basename(ancestors[i]));
-
 			if (child) {
 				await this.tree.expand(child);
 				root = child;
