@@ -456,16 +456,16 @@ export class ExplorerView extends ViewPane {
 			return false;
 		}
 
-		let copyOfResource: URI = resource;
-		while (!this.isWorkspaceRoot(copyOfResource)) {
-			if (copyOfResource.toString() === currentRoot.resource.toString()) {
+		let remainingPath: URI = resource;
+		while (!this.isWorkspaceRoot(remainingPath)) {
+			if (remainingPath.toString() === currentRoot.resource.toString()) {
 				return true;
 			}
 
-			copyOfResource = dirname(copyOfResource);
+			remainingPath = dirname(remainingPath);
 		}
 
-		return copyOfResource.toString() === currentRoot.resource.toString();
+		return remainingPath.toString() === currentRoot.resource.toString();
 	}
 
 	private async expandAncestorsToRoot(resource: URI): Promise<void> {
