@@ -27,6 +27,25 @@ function getFileEventsExcludes(configurationService: IConfigurationService, root
 	return configuration?.files?.exclude || Object.create(null);
 }
 
+export const notConcurrent = <T>(proc: () => PromiseLike<T>) => {
+	let inFlight: Promise<T> | false = false;
+
+	return () => {
+		if (!inFlight) {
+			inFlight = (async () => {
+				try {
+					return await proc();
+				} finally {
+					inFlight = false;
+				}
+			})();
+		}
+
+		return inFlight;
+	};
+};
+
+
 export class ExplorerService implements IExplorerService {
 	declare readonly _serviceBrand: undefined;
 
@@ -138,11 +157,10 @@ export class ExplorerService implements IExplorerService {
 		return !!this.cutItems && this.cutItems.indexOf(item) >= 0;
 	}
 
-	setRoot(resource: URI): void {
-		this.model.setRoot(resource).then(async () => {
-			await this.view?.setTreeInput();
-		});
-	}
+	setRoot = (resource: URI) => notConcurrent(async () => {
+		await this.model.setRoot(resource);
+		await this.view?.setTreeInput();
+	})();
 
 	getEditable(): { stat: ExplorerItem, data: IEditableData } | undefined {
 		return this.editable;
