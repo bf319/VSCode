@@ -701,7 +701,15 @@ export class ExplorerView extends ViewPane {
 		}
 
 		const previousInput = this.tree.getInput();
-		const promise = this.tree.setInput(input, viewState).then(() => {
+
+		// If the parent button was pressed, add the previous root to viewState.expanded so that its expanded children are not collapsed.
+		if (previousInput && input instanceof ExplorerItem && previousInput instanceof ExplorerItem) {
+			if (input.find(previousInput.resource)) {
+				viewState?.expanded?.push(previousInput.resource.toString());
+			}
+		}
+
+		const promise = this.tree.setInput(input, viewState).then(async () => {
 			if (!this.isWorkspaceRoot((input as ExplorerItem).resource)) {
 				this.parentButton.style.visibility = 'visible';
 			} else {
