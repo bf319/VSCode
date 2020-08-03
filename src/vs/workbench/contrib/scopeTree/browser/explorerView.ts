@@ -155,6 +155,8 @@ export class ExplorerView extends ViewPane {
 	private parentButton: HTMLElement = DOM.$(Codicon.foldUp.cssSelector);
 	private breadcrumb: HTMLElement = document.createElement('ul');
 
+	_version: number = 0;
+
 	constructor(
 		options: IViewPaneOptions,
 		@IContextMenuService contextMenuService: IContextMenuService,
@@ -325,8 +327,23 @@ export class ExplorerView extends ViewPane {
 		this.onConfigurationUpdated(configuration);
 
 		// When the explorer viewer is loaded, listen to changes to the editor input
-		this._register(this.editorService.onDidActiveEditorChange(() => {
-			this.selectActiveFile(true);
+		this._register(this.editorService.onDidActiveEditorChange(async () => {
+			const resource = this.getActiveFile();
+			if (!resource) {
+				return;
+			}
+
+			const currentVersion = this._version;
+
+			if (this.isChildOfCurrentRoot(resource)) {
+				this.expandAncestorsToRoot(resource).then(() => {
+					this.selectResource(resource, true, currentVersion + 1);
+				});
+			} else {
+				this.explorerService.setRoot(dirname(resource)).then(() => {
+					this.selectResource(resource, true, currentVersion + 1);
+				});
+			}
 		}));
 
 		// Also handle configuration updates
@@ -428,6 +445,45 @@ export class ExplorerView extends ViewPane {
 			} else if (deselect) {
 				this.tree.setSelection([]);
 				this.tree.setFocus([]);
+			}
+		}
+	}
+
+	private isChildOfCurrentRoot(resource: URI): boolean {
+		const currentRoot = this.tree.getInput() as ExplorerItem;
+		if (!currentRoot) {
+			return false;
+		}
+
+		let remainingPath: URI = resource;
+		while (!this.isWorkspaceRoot(remainingPath)) {
+			if (remainingPath.toString() === currentRoot.resource.toString()) {
+				return true;
+			}
+
+			remainingPath = dirname(remainingPath);
+		}
+
+		return remainingPath.toString() === currentRoot.resource.toString();
+	}
+
+	private async expandAncestorsToRoot(resource: URI): Promise<void> {
+		const ancestors: URI[] = [];
+		let findAncestor: URI = resource;
+		let root = this.tree.getInput() as ExplorerItem;
+
+		while (findAncestor.toString() !== root.resource.toString()) {
+			ancestors.push(findAncestor);
+			findAncestor = dirname(findAncestor);
+		}
+
+		ancestors.reverse();
+
+		for (let i = 0; i < ancestors.length; i++) {
+			const child = root.getChild(basename(ancestors[i]));
+			if (child) {
+				await this.tree.expand(child);
+				root = child;
 			}
 		}
 	}
@@ -757,7 +813,7 @@ export class ExplorerView extends ViewPane {
 		return withNullAsUndefined(toResource(input, { supportSideBySide: SideBySideEditor.PRIMARY }));
 	}
 
-	public async selectResource(resource: URI | undefined, reveal = this.autoReveal, retry = 0): Promise<void> {
+	public async selectResource(resource: URI | undefined, reveal = this.autoReveal, version?: number, retry = 0): Promise<void> {
 		// do no retry more than once to prevent inifinite loops in cases of inconsistent model
 		if (retry === 2) {
 			return;
@@ -765,6 +821,12 @@ export class ExplorerView extends ViewPane {
 
 		if (!resource || !this.isBodyVisible()) {
 			return;
+		}
+
+		if (!version || version <= this._version) {
+			return;
+		} else {
+			this._version = version;
 		}
 
 		// Expand all stats in the parent chain.
@@ -776,7 +838,7 @@ export class ExplorerView extends ViewPane {
 			try {
 				await this.tree.expand(item);
 			} catch (e) {
-				return this.selectResource(resource, reveal, retry + 1);
+				return this.selectResource(resource, reveal, version, retry + 1);
 			}
 
 			for (let child of item.children.values()) {
@@ -805,7 +867,7 @@ export class ExplorerView extends ViewPane {
 				this.tree.setSelection([item]);
 			} catch (e) {
 				// Element might not be in the tree, try again and silently fail
-				return this.selectResource(resource, reveal, retry + 1);
+				return this.selectResource(resource, reveal, version, retry + 1);
 			}
 		}
 	}

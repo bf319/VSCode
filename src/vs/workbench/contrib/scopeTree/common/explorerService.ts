@@ -138,10 +138,14 @@ export class ExplorerService implements IExplorerService {
 		return !!this.cutItems && this.cutItems.indexOf(item) >= 0;
 	}
 
-	setRoot(resource: URI): void {
-		this.model.setRoot(resource).then(async () => {
-			await this.view?.setTreeInput();
+	setRoot(resource: URI, fileToSelect?: URI): Promise<void> {
+		this.model.setRoot(resource).then(() => {
+			this.view?.setTreeInput().then(() => {
+				this.view?.selectResource(fileToSelect, true, this.view._version + 1);
+			});
 		});
+
+		return Promise.resolve();
 	}
 
 	getEditable(): { stat: ExplorerItem, data: IEditableData } | undefined {
@@ -163,7 +167,7 @@ export class ExplorerService implements IExplorerService {
 
 		const fileStat = this.findClosest(resource);
 		if (fileStat) {
-			await this.view.selectResource(fileStat.resource, reveal);
+			await this.view.selectResource(fileStat.resource, reveal, this.view?._version + 1);
 			return Promise.resolve(undefined);
 		}
 
@@ -188,7 +192,7 @@ export class ExplorerService implements IExplorerService {
 			await this.view.refresh(true, root);
 
 			// Select and Reveal
-			await this.view.selectResource(item ? item.resource : undefined, reveal);
+			await this.view.selectResource(item ? item.resource : undefined, reveal, this.view._version + 1);
 		} catch (error) {
 			root.isError = true;
 			await this.view.refresh(false, root);
