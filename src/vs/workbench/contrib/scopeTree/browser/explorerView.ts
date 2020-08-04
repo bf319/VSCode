@@ -327,22 +327,18 @@ export class ExplorerView extends ViewPane {
 		this.onConfigurationUpdated(configuration);
 
 		// When the explorer viewer is loaded, listen to changes to the editor input
-		this._register(this.editorService.onDidActiveEditorChange(async () => {
+		this._register(this.editorService.onDidActiveEditorChange(() => {
 			const resource = this.getActiveFile();
 			if (!resource) {
 				return;
 			}
 
-			const currentVersion = this._version;
-
 			if (this.isChildOfCurrentRoot(resource)) {
 				this.expandAncestorsToRoot(resource).then(() => {
-					this.selectResource(resource, true, currentVersion + 1);
+					this.selectResource(resource, true, this._version + 1);
 				});
 			} else {
-				this.explorerService.setRoot(dirname(resource)).then(() => {
-					this.selectResource(resource, true, currentVersion + 1);
-				});
+				this.explorerService.setRoot(dirname(resource), resource);
 			}
 		}));
 
