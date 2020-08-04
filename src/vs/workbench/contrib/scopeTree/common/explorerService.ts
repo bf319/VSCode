@@ -70,7 +70,7 @@ export class ExplorerService implements IExplorerService {
 		}));
 		this.disposables.add(this.model.onDidChangeRoots(() => {
 			if (this.view) {
-				this.view.setTreeInput();
+				this.view.setTreeInput(this.view._version + 1);
 			}
 		}));
 	}
@@ -140,7 +140,7 @@ export class ExplorerService implements IExplorerService {
 
 	setRoot(resource: URI, fileToSelect?: URI): Promise<void> {
 		this.model.setRoot(resource).then(() => {
-			this.view?.setTreeInput().then(() => {
+			this.view?.setTreeInput(this.view._version + 1).then(() => {
 				this.view?.selectResource(fileToSelect, true, this.view._version + 1);
 			});
 		});

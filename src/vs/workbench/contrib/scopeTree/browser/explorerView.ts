@@ -354,7 +354,7 @@ export class ExplorerView extends ViewPane {
 				// If a refresh was requested and we are now visible, run it
 				if (this.shouldRefresh) {
 					this.shouldRefresh = false;
-					await this.setTreeInput();
+					await this.setTreeInput(this._version + 1);
 				}
 				// Find resource to focus from active editor input if set
 				this.selectActiveFile(false, true);
@@ -729,10 +729,16 @@ export class ExplorerView extends ViewPane {
 		return DOM.getLargestChildWidth(parentNode, childNodes);
 	}
 
-	async setTreeInput(): Promise<void> {
+	async setTreeInput(version?: number): Promise<void> {
 		if (!this.isBodyVisible()) {
 			this.shouldRefresh = true;
 			return Promise.resolve(undefined);
+		}
+
+		if (!version || version <= this._version) {
+			return;
+		} else {
+			this._version = version;
 		}
 
 		const initialInputSetup = !this.tree.getInput();

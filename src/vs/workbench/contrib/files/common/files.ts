@@ -65,7 +65,7 @@ export interface IExplorerView {
 	getContext(respectMultiSelection: boolean): ExplorerItem[];
 	refresh(recursive: boolean, item?: ExplorerItem): Promise<void>;
 	selectResource(resource: URI | undefined, reveal?: boolean | string, version?: number): Promise<void>;
-	setTreeInput(): Promise<void>;
+	setTreeInput(version?: number): Promise<void>;
 	itemsCopied(tats: ExplorerItem[], cut: boolean, previousCut: ExplorerItem[] | undefined): void;
 	setEditable(stat: ExplorerItem, isEditing: boolean): Promise<void>;
 }
