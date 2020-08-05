@@ -56,6 +56,7 @@ import { IUriIdentityService } from 'vs/workbench/services/uriIdentity/common/ur
 import { dirname, basename } from 'vs/base/common/resources';
 import { Codicon } from 'vs/base/common/codicons';
 import 'vs/css!./media/treeNavigation';
+import { IBookmarksManager } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
 
 interface IExplorerViewColors extends IColorMapping {
 	listDropBackground?: ColorValue | undefined;
@@ -178,6 +179,7 @@ export class ExplorerView extends ViewPane {
 		@IFileService private readonly fileService: IFileService,
 		@IUriIdentityService private readonly uriIdentityService: IUriIdentityService,
 		@IOpenerService openerService: IOpenerService,
+		@IBookmarksManager private readonly bookmarksManager: IBookmarksManager
 	) {
 		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
 
