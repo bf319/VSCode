@@ -673,6 +673,27 @@ export class ExplorerView extends ViewPane {
 		return DOM.getLargestChildWidth(parentNode, childNodes);
 	}
 
+	findAdjacentSibling(deleted: ExplorerItem): URI | undefined {
+		const orderedChildren: ExplorerItem[] = [];
+		const parent = deleted.parent;
+
+		this.tree.getNode(parent).children.forEach(e => {
+			orderedChildren.push(e.element as ExplorerItem);
+		});
+
+		for (let i = 0; i < orderedChildren.length; i++) {
+			if (orderedChildren[i].resource.toString() === deleted.resource.toString()) {
+				if (i > 0) {
+					return orderedChildren[i - 1].resource;
+				} else if (orderedChildren.length > 1) {
+					return orderedChildren[1].resource;
+				}
+			}
+		}
+
+		return parent ? parent.resource : undefined;
+	}
+
 	async setTreeInput(): Promise<void> {
 		if (!this.isBodyVisible()) {
 			this.shouldRefresh = true;

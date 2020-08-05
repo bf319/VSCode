@@ -972,20 +972,7 @@ export const deleteFileHandler = async (accessor: ServicesAccessor) => {
 	const stats = explorerService.getContext(true).filter(s => !s.isRoot);
 
 	if (stats.length) {
-		const lastItemDeleted = stats[stats.length - 1];
-		const currentRoot = explorerService.roots[0];
-
-		deleteFiles(accessor.get(IWorkingCopyFileService), accessor.get(IDialogService), accessor.get(IConfigurationService), stats, false).then(() => {
-			// If the user deletes the focused directory, focus on the immediate parent directory
-			if (stats.includes(currentRoot) && !explorerService.findClosest(currentRoot.resource)) {
-				explorerService.setRoot(resources.dirname(currentRoot.resource));
-			}
-
-			// Select the parent resource so that the user can keep deleting files using keyboard
-			if (lastItemDeleted.parent && !explorerService.findClosest(lastItemDeleted.resource)) {
-				explorerService.select(lastItemDeleted.parent.resource);
-			}
-		});
+		await deleteFiles(accessor.get(IWorkingCopyFileService), accessor.get(IDialogService), accessor.get(IConfigurationService), stats, false);
 	}
 };
 
