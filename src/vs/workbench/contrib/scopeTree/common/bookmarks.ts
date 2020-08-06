@@ -9,13 +9,13 @@ import { URI } from 'vs/base/common/uri';
 export interface IBookmarksManager {
 	addBookmark(resource: URI, scope: BookmarkType): void;
 	getBookmark(resource: URI): BookmarkType;
-	saveBookmarks(): void;
+	toggleBookmark(resource: URI): BookmarkType;
 }
 
 export const IBookmarksManager = createDecorator<IBookmarksManager>('bookmarksManager');
 
 export const enum BookmarkType {
-	NONE,
-	GLOBAL,
-	WORKSPACE
+	NONE = 'bookmark-not-set',
+	GLOBAL = 'bookmark-set-global',
+	WORKSPACE = 'bookmark-set-workspace'
 }
