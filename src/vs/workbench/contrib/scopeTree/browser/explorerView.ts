@@ -674,19 +674,16 @@ export class ExplorerView extends ViewPane {
 	}
 
 	findAdjacentSibling(deleted: ExplorerItem): URI | undefined {
-		const orderedChildren: ExplorerItem[] = [];
 		const parent = deleted.parent;
+		const children = this.tree.getNode(parent).children;
 
-		this.tree.getNode(parent).children.forEach(e => {
-			orderedChildren.push(e.element as ExplorerItem);
-		});
-
-		for (let i = 0; i < orderedChildren.length; i++) {
-			if (orderedChildren[i].resource.toString() === deleted.resource.toString()) {
+		for (let i = 0; i < children.length; i++) {
+			const element = children[i].element as ExplorerItem;
+			if (element.resource.toString() === deleted.resource.toString()) {
 				if (i > 0) {
-					return orderedChildren[i - 1].resource;
-				} else if (orderedChildren.length > 1) {
-					return orderedChildren[1].resource;
+					return (children[i - 1].element as ExplorerItem).resource;
+				} else if (children.length > 1) {
+					return (children[1].element as ExplorerItem).resource;
 				}
 			}
 		}
