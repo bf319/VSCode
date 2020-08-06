@@ -24,38 +24,5 @@ export class BookmarksManager implements IBookmarksManager {
 		return BookmarkType.NONE;
 	}
 
-	public initializeBookmarks(): void {
-		// Retrieve bookmarks from storageService
-		this.initializeWorkspaceBookmarks();
-		this.initializeGlobalBookmarks();
-	}
-
-	public saveBookmarks(): void {
-		this.saveWorkspaceBookmarks();
-		this.saveGlobalBookmarks();
-	}
-
-	private initializeWorkspaceBookmarks(): void {
-		const getWorkspaceBookmarks = this.storageService.get(BookmarksManager.WORKSPACE_BOOKMARKS_STORAGE_KEY, StorageScope.WORKSPACE);
-		if (getWorkspaceBookmarks) {
-			const convertToBookmarks = JSON.parse(getWorkspaceBookmarks);
-			for (let i = 0; i < convertToBookmarks.length; i++) {
-				const uriAsString = (convertToBookmarks[i] as URI).toString();
-				this.workspaceBookmarks.add(uriAsString);
-			}
-		}
-	}
-
-	private initializeGlobalBookmarks(): void {
-
-	}
-
-	private saveWorkspaceBookmarks(): void {
-		this.storageService.store(BookmarksManager.WORKSPACE_BOOKMARKS_STORAGE_KEY, JSON.stringify(Array.from(this.workspaceBookmarks)), StorageScope.WORKSPACE);
-	}
-
-	private saveGlobalBookmarks(): void {
-		this.storageService.store(BookmarksManager.GLOBAL_BOOKMARKS_STORAGE_KEY, JSON.stringify(Array.from(this.globalBookmarks)), StorageScope.GLOBAL);
-	}
-
+	public saveBookmarks(): void { }
 }
