@@ -141,7 +141,8 @@ export interface ITreeEvent<T> {
 export enum TreeMouseEventTarget {
 	Unknown,
 	Twistie,
-	Element
+	Element,
+	Bookmark
 }
 
 export interface ITreeMouseEvent<T> {

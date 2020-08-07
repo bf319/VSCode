@@ -32,7 +32,7 @@ import { ILabelService } from 'vs/platform/label/common/label';
 import { ExplorerDelegate, ExplorerDataSource, FilesRenderer, ICompressedNavigationController, FilesFilter, FileSorter, FileDragAndDrop, ExplorerCompressionDelegate, isCompressedFolderName } from 'vs/workbench/contrib/scopeTree/browser/explorerViewer';
 import { IThemeService, IFileIconTheme } from 'vs/platform/theme/common/themeService';
 import { IWorkbenchThemeService } from 'vs/workbench/services/themes/common/workbenchThemeService';
-import { ITreeContextMenuEvent } from 'vs/base/browser/ui/tree/tree';
+import { ITreeContextMenuEvent, TreeMouseEventTarget } from 'vs/base/browser/ui/tree/tree';
 import { IMenuService, MenuId, IMenu } from 'vs/platform/actions/common/actions';
 import { createAndFillInContextMenuActions } from 'vs/platform/actions/browser/menuEntryActionViewItem';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
@@ -359,6 +359,12 @@ export class ExplorerView extends ViewPane {
 
 			if (icon !== null) {
 				icon.style.visibility = 'hidden';
+			}
+		}));
+
+		this._register(this.tree.onMouseClick(e => {
+			if (e.target === TreeMouseEventTarget.Bookmark && e.element) {
+				this.tree.toggleCollapsed(e.element);
 			}
 		}));
 	}

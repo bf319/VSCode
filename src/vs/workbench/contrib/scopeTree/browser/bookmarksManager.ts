@@ -84,9 +84,9 @@ export class BookmarksManager implements IBookmarksManager {
 	private initializeGlobalBookmarks(): void {
 		const rawGlobalBookmarks = this.storageService.get(BookmarksManager.GLOBAL_BOOKMARKS_STORAGE_KEY, StorageScope.GLOBAL);
 		if (rawGlobalBookmarks) {
-			const gBookmarks = JSON.parse(rawGlobalBookmarks);
+			const gBookmarks = JSON.parse(rawGlobalBookmarks) as URI[];
 			for (let i = 0; i < gBookmarks.length; i++) {
-				const uriAsString = (gBookmarks[i] as URI).toString();
+				const uriAsString = gBookmarks[i].toString();
 				this.globalBookmarks.add(uriAsString);
 			}
 		}
@@ -95,9 +95,9 @@ export class BookmarksManager implements IBookmarksManager {
 	private initializeWorkspaceBookmarks(): void {
 		const rawWorkspaceBookmarks = this.storageService.get(BookmarksManager.WORKSPACE_BOOKMARKS_STORAGE_KEY, StorageScope.WORKSPACE);
 		if (rawWorkspaceBookmarks) {
-			const wBookmarks = JSON.parse(rawWorkspaceBookmarks);
+			const wBookmarks = JSON.parse(rawWorkspaceBookmarks) as URI[];
 			for (let i = 0; i < wBookmarks.length; i++) {
-				const uriAsString = (wBookmarks[i] as URI).toString();
+				const uriAsString = wBookmarks[i].toString();
 				this.workspaceBookmarks.add(uriAsString);
 			}
 		}

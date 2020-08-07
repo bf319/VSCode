@@ -924,6 +924,11 @@ function asTreeMouseEvent<T>(event: IListMouseEvent<ITreeNode<T, any>>): ITreeMo
 		target = TreeMouseEventTarget.Twistie;
 	} else if (hasParentWithClass(event.browserEvent.target as HTMLElement, 'monaco-tl-contents', 'monaco-tl-row')) {
 		target = TreeMouseEventTarget.Element;
+	} else if (hasParentWithClass(event.browserEvent.target as HTMLElement, 'bookmark-not-set', 'monaco-tl-row') ||
+		hasParentWithClass(event.browserEvent.target as HTMLElement, 'bookmark-set-global', 'monaco-tl-row') ||
+		hasParentWithClass(event.browserEvent.target as HTMLElement, 'bookmark-set-workspace', 'monaco-tl-row')
+	) {
+		target = TreeMouseEventTarget.Bookmark;
 	}
 
 	return {
