@@ -448,7 +448,7 @@ export class FilesRenderer implements ICompressibleTreeRenderer<ExplorerItem, Fu
 
 	private getRowContainerElement(element: HTMLElement): HTMLElement {
 		const rowContainer = element.parentElement;
-		if (rowContainer === null) {
+		if (rowContainer === null || rowContainer.lastChild !== element) {
 			throw new Error('Error adding bookmark icon. Ancestor chain has changed.');
 		}
 
