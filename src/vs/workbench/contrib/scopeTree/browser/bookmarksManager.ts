@@ -22,7 +22,6 @@ export class BookmarksManager implements IBookmarksManager {
 
 	private globalBookmarks: Set<string> = new Set();		// The URIs of the stats that have a global bookmark
 	private workspaceBookmarks: Set<string> = new Set();	// The URIs of the stats that have a workspace bookmark
-	private bookmarkTypes: BookmarkType[] = [BookmarkType.NONE, BookmarkType.WORKSPACE, BookmarkType.GLOBAL];
 
 	public addBookmark(resource: URI, scope: BookmarkType): void {
 		const resourceAsString = resource.toString();
@@ -56,18 +55,10 @@ export class BookmarksManager implements IBookmarksManager {
 	}
 
 	public toggleBookmark(resource: URI): BookmarkType {
-		const previousType: BookmarkType = this.getBookmark(resource);
+		const newType = (this.getBookmark(resource) + 1) % 3;
+		this.addBookmark(resource, newType);
 
-		for (let i = 0; i < this.bookmarkTypes.length; i++) {
-			if (previousType === this.bookmarkTypes[i]) {
-				const newType: BookmarkType = this.bookmarkTypes[(i + 1) % 3];
-				this.addBookmark(resource, newType);
-
-				return newType;
-			}
-		}
-
-		return BookmarkType.NONE;	// Will never happen
+		return newType;
 	}
 
 	private initializeBookmarks(): void {

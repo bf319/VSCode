@@ -15,7 +15,19 @@ export interface IBookmarksManager {
 export const IBookmarksManager = createDecorator<IBookmarksManager>('bookmarksManager');
 
 export const enum BookmarkType {
-	NONE = 'bookmark-not-set',
-	GLOBAL = 'bookmark-set-global',
-	WORKSPACE = 'bookmark-set-workspace'
+	NONE,
+	GLOBAL,
+	WORKSPACE
+}
+
+export function bookmarkClass(type: BookmarkType): string {
+	if (type === BookmarkType.GLOBAL) {
+		return 'bookmark-set-global';
+	}
+
+	if (type === BookmarkType.WORKSPACE) {
+		return 'bookmark-set-workspace';
+	}
+
+	return 'bookmark-not-set';
 }
