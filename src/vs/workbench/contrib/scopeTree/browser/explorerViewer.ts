@@ -431,17 +431,45 @@ export class FilesRenderer implements ICompressibleTreeRenderer<ExplorerItem, Fu
 			disposables.add(focusIcon);
 
 			if (this.bookmarksManager) {
-				const bookmarkIcon = new RenderBookmarkIcon(stat, this.bookmarksManager);
-				const contents = templateData.label.element.parentElement;
-				const row = contents?.parentElement;
+				try {
+					const bookmarkIcon = new RenderBookmarkIcon(stat, this.bookmarksManager);
+					const contentContainer = this.getContentsContainerElement(templateData.label.element);
+					const rowContainer = this.getRowContainerElement(contentContainer);
 
-				disposables.add(bookmarkIcon);
-				row?.insertBefore(bookmarkIcon.iconContainer, contents);
+					disposables.add(bookmarkIcon);
+					rowContainer.insertBefore(bookmarkIcon.iconContainer, contentContainer);
+				} catch (e) { }
 			}
 		}
 
 		disposables.add(prevDisposable);
 		return disposables;
+	}
+
+	private getRowContainerElement(element: HTMLElement): HTMLElement {
+		const rowContainer = element.parentElement;
+		if (rowContainer === null) {
+			throw new Error('Error adding bookmark icon. Ancestor chain has changed.');
+		}
+
+		if (!rowContainer.classList.contains('monaco-tl-row')) {
+			throw new Error('Error adding bookmark icon. CSS class of the row container has changed.');
+		}
+
+		return rowContainer;
+	}
+
+	private getContentsContainerElement(element: HTMLElement): HTMLElement {
+		const contentContainer = element.parentElement;
+		if (contentContainer === null) {
+			throw new Error('Error adding bookmark icon. Ancestor chain has changed.');
+		}
+
+		if (!contentContainer.classList.contains('monaco-tl-contents')) {
+			throw new Error('Error adding bookmark icon. CSS class of the contents container has changed.');
+		}
+
+		return contentContainer;
 	}
 
 	private renderInputBox(container: HTMLElement, stat: ExplorerItem, editableData: IEditableData): IDisposable {
