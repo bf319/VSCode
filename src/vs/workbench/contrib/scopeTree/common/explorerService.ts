@@ -283,10 +283,17 @@ export class ExplorerService implements IExplorerService {
 			modelElements.forEach(async element => {
 				if (element.parent) {
 					const parent = element.parent;
+					const nextSelection = this.view?.findAdjacentSibling(element);
+
 					// Remove Element from Parent (Model)
 					parent.removeChild(element);
 					// Refresh Parent (View)
-					await this.view?.refresh(false, parent);
+					this.view?.refresh(false, parent).then(() => {
+						this.view?.selectResource(nextSelection);
+					});
+				} else {
+					const parentResource = dirname(element.resource);
+					this.setRoot(parentResource);
 				}
 			});
 		}

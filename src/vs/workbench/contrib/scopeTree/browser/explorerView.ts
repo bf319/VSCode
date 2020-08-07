@@ -56,6 +56,7 @@ import { IUriIdentityService } from 'vs/workbench/services/uriIdentity/common/ur
 import { dirname, basename } from 'vs/base/common/resources';
 import { Codicon } from 'vs/base/common/codicons';
 import 'vs/css!./media/treeNavigation';
+import { IBookmarksManager } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
 
 interface IExplorerViewColors extends IColorMapping {
 	listDropBackground?: ColorValue | undefined;
@@ -178,6 +179,7 @@ export class ExplorerView extends ViewPane {
 		@IFileService private readonly fileService: IFileService,
 		@IUriIdentityService private readonly uriIdentityService: IUriIdentityService,
 		@IOpenerService openerService: IOpenerService,
+		@IBookmarksManager private readonly bookmarksManager: IBookmarksManager
 	) {
 		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
 
@@ -326,7 +328,7 @@ export class ExplorerView extends ViewPane {
 
 		// When the explorer viewer is loaded, listen to changes to the editor input
 		this._register(this.editorService.onDidActiveEditorChange(() => {
-			this.selectActiveFile(true);
+			this.selectActiveFile();
 		}));
 
 		// Also handle configuration updates
@@ -671,6 +673,24 @@ export class ExplorerView extends ViewPane {
 		const childNodes = ([] as HTMLElement[]).slice.call(parentNode.querySelectorAll('.explorer-item .label-name')); // select all file labels
 
 		return DOM.getLargestChildWidth(parentNode, childNodes);
+	}
+
+	findAdjacentSibling(deleted: ExplorerItem): URI | undefined {
+		const parent = deleted.parent;
+		const children = this.tree.getNode(parent).children;
+
+		for (let i = 0; i < children.length; i++) {
+			const element = children[i].element as ExplorerItem;
+			if (element.resource.toString() === deleted.resource.toString()) {
+				if (i > 0) {
+					return (children[i - 1].element as ExplorerItem).resource;
+				} else if (children.length > 1) {
+					return (children[1].element as ExplorerItem).resource;
+				}
+			}
+		}
+
+		return parent ? parent.resource : undefined;
 	}
 
 	async setTreeInput(): Promise<void> {
