@@ -6,6 +6,7 @@
 .bookmark-not-set{
 	content: url('bookmark-not-set.svg');
 	height: 50%;
+	padding-top: 2px;
 	padding-right: 5px;
 	object-fit: contain;
 }
@@ -13,6 +14,7 @@
 .bookmark-set-global{
 	content: url('bookmark-set-global.svg');
 	height: 50%;
+	padding-top: 2px;
 	padding-right: 5px;
 	object-fit: contain;
 }
@@ -20,6 +22,41 @@
 .bookmark-set-workspace{
 	content: url('bookmark-set-workspace.svg');
 	height: 50%;
+	padding-top: 2px;
 	padding-right: 5px;
 	object-fit: contain;
+}
+
+.bookmark-header {
+	height: 22px;
+	font-size: 11px;
+	font-weight: bold;
+	text-transform: uppercase;
+	overflow: hidden;
+	display: flex;
+	cursor: pointer;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: row;
+}
+
+.bookmark-path {
+	opacity: .7;
+	margin-left: 0.5em;
+	font-size: 0.9em;
+	white-space: pre;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.scope-tree-focus-icon-near-bookmark {
+	content: url('scope.svg');
+	float: left;
+	align-self: center;
+	visibility: hidden;
+	/* padding-left: 10px; */
+	height: 50%;
+	padding-right: 5px;
+	padding-top: 1px;
 }
