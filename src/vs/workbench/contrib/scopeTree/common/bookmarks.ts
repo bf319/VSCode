@@ -8,16 +8,16 @@ import { URI } from 'vs/base/common/uri';
 
 export interface IBookmarksManager {
 	addBookmark(resource: URI, scope: BookmarkType): void;
-	getBookmark(resource: URI): BookmarkType;
-	toggleBookmark(resource: URI): BookmarkType;
+	getBookmarkType(resource: URI): BookmarkType;
+	toggleBookmarkType(resource: URI): BookmarkType;
 }
 
 export const IBookmarksManager = createDecorator<IBookmarksManager>('bookmarksManager');
 
 export const enum BookmarkType {
 	NONE,
-	GLOBAL,
-	WORKSPACE
+	WORKSPACE,
+	GLOBAL
 }
 
 export function bookmarkClass(type: BookmarkType): string {
