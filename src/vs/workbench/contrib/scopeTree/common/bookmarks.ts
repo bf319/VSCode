@@ -8,14 +8,26 @@ import { URI } from 'vs/base/common/uri';
 
 export interface IBookmarksManager {
 	addBookmark(resource: URI, scope: BookmarkType): void;
-	getBookmark(resource: URI): BookmarkType;
-	saveBookmarks(): void;
+	getBookmarkType(resource: URI): BookmarkType;
+	toggleBookmarkType(resource: URI): BookmarkType;
 }
 
 export const IBookmarksManager = createDecorator<IBookmarksManager>('bookmarksManager');
 
 export const enum BookmarkType {
 	NONE,
-	GLOBAL,
-	WORKSPACE
+	WORKSPACE,
+	GLOBAL
+}
+
+export function bookmarkClass(type: BookmarkType): string {
+	if (type === BookmarkType.GLOBAL) {
+		return 'bookmark-set-global';
+	}
+
+	if (type === BookmarkType.WORKSPACE) {
+		return 'bookmark-set-workspace';
+	}
+
+	return 'bookmark-not-set';
 }
