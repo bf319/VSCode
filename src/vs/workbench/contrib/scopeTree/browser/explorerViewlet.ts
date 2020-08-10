@@ -163,7 +163,7 @@ export class ExplorerViewletViewsContribution extends Disposable implements IWor
 			containerIcon: Codicon.star.classNames,
 			ctorDescriptor: new SyncDescriptor(BookmarksView),
 			order: 2,
-			canToggleVisibility: true,	// So that you can hide it from the ... button next to the explorer
+			canToggleVisibility: true,
 		};
 	}
 
