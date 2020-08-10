@@ -39,6 +39,7 @@ import { IsWebContext } from 'vs/platform/contextkey/common/contextkeys';
 import { AddRootFolderAction, OpenFolderAction, OpenFileFolderAction } from 'vs/workbench/browser/actions/workspaceActions';
 import { isMacintosh } from 'vs/base/common/platform';
 import { Codicon } from 'vs/base/common/codicons';
+import { BookmarksView } from 'vs/workbench/contrib/scopeTree/browser/bookmarksView';
 
 export class ExplorerViewletViewsContribution extends Disposable implements IWorkbenchContribution {
 
@@ -73,6 +74,11 @@ export class ExplorerViewletViewsContribution extends Disposable implements IWor
 		const openEditorsViewDescriptor = this.createOpenEditorsViewDescriptor();
 		if (!viewDescriptors.some(v => v.id === openEditorsViewDescriptor.id)) {
 			viewDescriptorsToRegister.push(openEditorsViewDescriptor);
+		}
+
+		const bookmarksDescriptor = this.createBookmarksViewDescriptor();
+		if (!viewDescriptors.some(v => v.id === bookmarksDescriptor.id)) {
+			viewDescriptorsToRegister.push(bookmarksDescriptor);
 		}
 
 		const explorerViewDescriptor = this.createExplorerViewDescriptor();
@@ -147,6 +153,17 @@ export class ExplorerViewletViewsContribution extends Disposable implements IWor
 			focusCommand: {
 				id: 'workbench.explorer.fileView.focus'
 			}
+		};
+	}
+
+	private createBookmarksViewDescriptor(): IViewDescriptor {
+		return {
+			id: BookmarksView.ID,
+			name: BookmarksView.NAME,
+			containerIcon: Codicon.star.classNames,
+			ctorDescriptor: new SyncDescriptor(BookmarksView),
+			order: 2,
+			canToggleVisibility: true,
 		};
 	}
 
