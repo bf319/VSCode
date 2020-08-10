@@ -59,7 +59,7 @@ import { domEvent } from 'vs/base/browser/event';
 import { IEditableData } from 'vs/workbench/common/views';
 import { IEditorInput } from 'vs/workbench/common/editor';
 import { CancellationTokenSource, CancellationToken } from 'vs/base/common/cancellation';
-import { IBookmarksManager } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
+import { IBookmarksManager, bookmarkClass } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
 
 export class ExplorerDelegate implements IListVirtualDelegate<ExplorerItem> {
 
@@ -265,10 +265,10 @@ class BookmarkIconRenderer implements IDisposable {
 	constructor(stat: ExplorerItem, bookmarkManager: IBookmarksManager) {
 		this._iconContainer = document.createElement('img');
 		this._iconContainer.id = 'bookmarkIconContainer_' + stat.resource.toString();
-		this._iconContainer.className = bookmarkManager.getBookmark(stat.resource);
+		this._iconContainer.className = bookmarkClass(bookmarkManager.getBookmarkType(stat.resource));
 		this._iconContainer.onclick = () => {
-			const newType = bookmarkManager.toggleBookmark(stat.resource);
-			this._iconContainer.className = newType;
+			const newType = bookmarkManager.toggleBookmarkType(stat.resource);
+			this._iconContainer.className = bookmarkClass(newType);
 		};
 	}
 
