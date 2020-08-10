@@ -306,10 +306,12 @@ export class ExplorerView extends ViewPane {
 		this.renderParentButton();
 
 		const parentContainer = document.createElement('div');
+		const breadcrumbBackround = DOM.append(parentContainer, document.createElement('div'));
 
 		DOM.addClass(this.breadcrumb, 'breadcrumb-file-tree');
+		DOM.addClass(breadcrumbBackround, 'breadcrumb-background');
 		DOM.append(container, parentContainer);
-		parentContainer.appendChild(this.breadcrumb);
+		DOM.append(breadcrumbBackround, this.breadcrumb);
 
 		this.treeContainer = DOM.append(parentContainer, DOM.$('.explorer-folders-view'));
 

@@ -5,10 +5,13 @@
 
 .breadcrumb-file-tree {
 	list-style: none;
-	background-color: #eee;
 	white-space: nowrap;
 	position: relative;
 	left: -20px;
+}
+
+.breadcrumb-background {
+	background-color: #eee;
 }
 
 .breadcrumb-element {
