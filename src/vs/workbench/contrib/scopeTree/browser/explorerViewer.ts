@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import 'vs/css!./media/scopeTreeFileIcon';
+import 'vs/css!./media/bookmarkIcon';
 import { IListAccessibilityProvider } from 'vs/base/browser/ui/list/listWidget';
 import * as DOM from 'vs/base/browser/dom';
 import * as glob from 'vs/base/common/glob';
@@ -58,6 +59,7 @@ import { domEvent } from 'vs/base/browser/event';
 import { IEditableData } from 'vs/workbench/common/views';
 import { IEditorInput } from 'vs/workbench/common/editor';
 import { CancellationTokenSource, CancellationToken } from 'vs/base/common/cancellation';
+import { IBookmarksManager } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
 
 export class ExplorerDelegate implements IListVirtualDelegate<ExplorerItem> {
 
@@ -239,13 +241,35 @@ export interface IFileTemplateData {
 	container: HTMLElement;
 }
 
-class RenderFocusIcon implements IDisposable {
+class FocusIconRenderer implements IDisposable {
 	private _iconContainer: HTMLElement;
 
 	constructor(private stat: ExplorerItem) {
 		this._iconContainer = document.createElement('img');
 		DOM.addClass(this._iconContainer, 'scope-tree-focus-icon');
 		this._iconContainer.id = 'iconContainer_' + this.stat.resource.toString();
+	}
+
+	get iconContainer(): HTMLElement {
+		return this._iconContainer;
+	}
+
+	dispose() {
+		this._iconContainer.remove();
+	}
+}
+
+class BookmarkIconRenderer implements IDisposable {
+	private _iconContainer: HTMLElement;
+
+	constructor(stat: ExplorerItem, bookmarkManager: IBookmarksManager) {
+		this._iconContainer = document.createElement('img');
+		this._iconContainer.id = 'bookmarkIconContainer_' + stat.resource.toString();
+		this._iconContainer.className = bookmarkManager.getBookmark(stat.resource);
+		this._iconContainer.onclick = () => {
+			const newType = bookmarkManager.toggleBookmark(stat.resource);
+			this._iconContainer.className = newType;
+		};
 	}
 
 	get iconContainer(): HTMLElement {
@@ -267,6 +291,8 @@ export class FilesRenderer implements ICompressibleTreeRenderer<ExplorerItem, Fu
 	private _onDidChangeActiveDescendant = new EventMultiplexer<void>();
 	readonly onDidChangeActiveDescendant = this._onDidChangeActiveDescendant.event;
 
+	private bookmarksManager: IBookmarksManager | undefined = undefined;
+
 	constructor(
 		private labels: ResourceLabels,
 		private updateWidth: (stat: ExplorerItem) => void,
@@ -282,6 +308,10 @@ export class FilesRenderer implements ICompressibleTreeRenderer<ExplorerItem, Fu
 				this.config = this.configurationService.getValue();
 			}
 		});
+	}
+
+	registerBookmarksManager(manager: IBookmarksManager): void {
+		this.bookmarksManager = manager;
 	}
 
 	getWidgetAriaLabel(): string {
@@ -392,17 +422,52 @@ export class FilesRenderer implements ICompressibleTreeRenderer<ExplorerItem, Fu
 		});
 
 		if (stat.isDirectory) {
-			const focusIcon = new RenderFocusIcon(stat);
+			const focusIcon = new FocusIconRenderer(stat);
 			focusIcon.iconContainer.onclick = () => this.explorerService.setRoot(stat.resource);
 
 			templateData.label.element.style.float = 'left';
 			templateData.label.element.appendChild(focusIcon.iconContainer);
 
 			disposables.add(focusIcon);
+
+			if (this.bookmarksManager) {
+				const bookmarkIcon = new BookmarkIconRenderer(stat, this.bookmarksManager);
+				const contentContainer = this.getContentsContainerElement(templateData.label.element);
+				const rowContainer = this.getRowContainerElement(contentContainer);
+
+				disposables.add(bookmarkIcon);
+				rowContainer.insertBefore(bookmarkIcon.iconContainer, contentContainer);
+			}
 		}
 
 		disposables.add(prevDisposable);
 		return disposables;
+	}
+
+	private getRowContainerElement(element: HTMLElement): HTMLElement {
+		const rowContainer = element.parentElement;
+		if (rowContainer === null || rowContainer.lastChild !== element) {
+			throw new Error('Error adding bookmark icon. Ancestor chain has changed.');
+		}
+
+		if (!rowContainer.classList.contains('monaco-tl-row')) {
+			throw new Error('Error adding bookmark icon. CSS class of the row container has changed.');
+		}
+
+		return rowContainer;
+	}
+
+	private getContentsContainerElement(element: HTMLElement): HTMLElement {
+		const contentContainer = element.parentElement;
+		if (contentContainer === null) {
+			throw new Error('Error adding bookmark icon. Ancestor chain has changed.');
+		}
+
+		if (!contentContainer.classList.contains('monaco-tl-contents')) {
+			throw new Error('Error adding bookmark icon. CSS class of the contents container has changed.');
+		}
+
+		return contentContainer;
 	}
 
 	private renderInputBox(container: HTMLElement, stat: ExplorerItem, editableData: IEditableData): IDisposable {
