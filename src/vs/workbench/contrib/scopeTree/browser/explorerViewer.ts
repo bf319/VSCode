@@ -241,7 +241,7 @@ export interface IFileTemplateData {
 	container: HTMLElement;
 }
 
-class RenderFocusIcon implements IDisposable {
+class FocusIconRenderer implements IDisposable {
 	private _iconContainer: HTMLElement;
 
 	constructor(private stat: ExplorerItem) {
@@ -259,7 +259,7 @@ class RenderFocusIcon implements IDisposable {
 	}
 }
 
-class RenderBookmarkIcon implements IDisposable {
+class BookmarkIconRenderer implements IDisposable {
 	private _iconContainer: HTMLElement;
 
 	constructor(stat: ExplorerItem, bookmarkManager: IBookmarksManager) {
@@ -422,7 +422,7 @@ export class FilesRenderer implements ICompressibleTreeRenderer<ExplorerItem, Fu
 		});
 
 		if (stat.isDirectory) {
-			const focusIcon = new RenderFocusIcon(stat);
+			const focusIcon = new FocusIconRenderer(stat);
 			focusIcon.iconContainer.onclick = () => this.explorerService.setRoot(stat.resource);
 
 			templateData.label.element.style.float = 'left';
@@ -431,14 +431,12 @@ export class FilesRenderer implements ICompressibleTreeRenderer<ExplorerItem, Fu
 			disposables.add(focusIcon);
 
 			if (this.bookmarksManager) {
-				try {
-					const bookmarkIcon = new RenderBookmarkIcon(stat, this.bookmarksManager);
-					const contentContainer = this.getContentsContainerElement(templateData.label.element);
-					const rowContainer = this.getRowContainerElement(contentContainer);
+				const bookmarkIcon = new BookmarkIconRenderer(stat, this.bookmarksManager);
+				const contentContainer = this.getContentsContainerElement(templateData.label.element);
+				const rowContainer = this.getRowContainerElement(contentContainer);
 
-					disposables.add(bookmarkIcon);
-					rowContainer.insertBefore(bookmarkIcon.iconContainer, contentContainer);
-				} catch (e) { }
+				disposables.add(bookmarkIcon);
+				rowContainer.insertBefore(bookmarkIcon.iconContainer, contentContainer);
 			}
 		}
 
