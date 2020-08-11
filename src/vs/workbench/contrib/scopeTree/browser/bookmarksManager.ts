@@ -14,8 +14,8 @@ export class BookmarksManager implements IBookmarksManager {
 	// Yellow bookmark = workspace
 	// Red bookmark = global
 
-	private globalBookmarks: Set<string> = new Set();
-	private workspaceBookmarks: Set<string> = new Set();
+	globalBookmarks: Set<string> = new Set();
+	workspaceBookmarks: Set<string> = new Set();
 
 	constructor(
 		@IStorageService private readonly storageService: IStorageService
