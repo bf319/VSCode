@@ -50,101 +50,53 @@ export class BookmarksView extends ViewPane {
 	}
 
 	private renderWorkspaceBookmarksContainer(container: HTMLElement): void {
-		const bigWorkspaceContainer = document.createElement('div');
-		container.appendChild(bigWorkspaceContainer);
-		bigWorkspaceContainer.style.paddingLeft = '20px';
-		bigWorkspaceContainer.style.maxHeight = '50%';
-		const workspaceContainer = document.createElement('div');
-		bigWorkspaceContainer.appendChild(workspaceContainer);
+		const workspaceHeader = DOM.append(container, document.createElement('div'));
+		workspaceHeader.className = 'bookmark-header';
+
+		const workspaceContainer = DOM.append(container, document.createElement('div'));
+		workspaceContainer.className = 'bookmarks-container';
+
 		const collapsedTwistie = DOM.$(Codicon.chevronRight.cssSelector);
-		const expandedTwistie = DOM.$(Codicon.chevronDown.cssSelector);
-		const bookmarkIcon = document.createElement('img');
-		const containerTitle = document.createElement('b');
+		const expandedTwistie = DOM.append(workspaceHeader, DOM.$(Codicon.chevronDown.cssSelector));
+		const workspaceIcon = DOM.append(workspaceHeader, document.createElement('img'));
+		workspaceIcon.className = 'bookmark-header-workspace-icon';
 
-		workspaceContainer.className = 'bookmark-header';
-
+		const containerTitle = DOM.append(workspaceHeader, document.createElement('span'));
 		containerTitle.innerText = 'WORKSPACE BOOKMARKS';
 		containerTitle.style.color = 'black';
-		bookmarkIcon.className = 'bookmark-set-workspace';
 
-		workspaceContainer.appendChild(collapsedTwistie);
-		workspaceContainer.appendChild(bookmarkIcon);
-		workspaceContainer.appendChild(containerTitle);
+		const bookmarksList = this.renderWorkspaceBookmarks(workspaceContainer);
 
-		const bookmarksList = this.renderWorkspaceBookmarks(bigWorkspaceContainer);
-		bookmarksList.style.maxHeight = '100%';
-
-		workspaceContainer.onclick = () => {
+		workspaceHeader.onclick = () => {
+			// Toggle contents and twistie icon, and add some paddinnng
 			if (bookmarksList.style.display === 'none') {
-				workspaceContainer.replaceChild(expandedTwistie, collapsedTwistie);
+				workspaceHeader.replaceChild(expandedTwistie, collapsedTwistie);
 				bookmarksList.style.display = '';
 			} else {
-				workspaceContainer.replaceChild(collapsedTwistie, expandedTwistie);
-				bookmarksList.style.display = 'none';
-			}
-		};
-
-	}
-
-	private renderGlobalBookmarksContainer(container: HTMLElement): void {
-		const bigGlobalContainer = document.createElement('div');
-		container.appendChild(bigGlobalContainer);
-		bigGlobalContainer.style.maxHeight = '50%';
-		bigGlobalContainer.style.paddingLeft = '20px';
-		const globalContainer = document.createElement('div');
-		bigGlobalContainer.appendChild(globalContainer);
-		const collapsedTwistie = DOM.$(Codicon.chevronRight.cssSelector);
-		const expandedTwistie = DOM.$(Codicon.chevronDown.cssSelector);
-		const bookmarkIcon = document.createElement('img');
-		const containerTitle = document.createElement('b');
-
-		globalContainer.className = 'bookmark-header';
-
-		containerTitle.innerText = 'GLOBAL BOOKMARKS';
-		containerTitle.style.color = 'black';
-		bookmarkIcon.className = 'bookmark-set-global';
-
-		globalContainer.appendChild(collapsedTwistie);
-		globalContainer.appendChild(bookmarkIcon);
-		globalContainer.appendChild(containerTitle);
-
-		const bookmarksList = this.renderGlobalBookmarks(bigGlobalContainer);
-
-		globalContainer.onclick = () => {
-			if (bookmarksList.style.display === 'none') {
-				globalContainer.replaceChild(expandedTwistie, collapsedTwistie);
-				bookmarksList.style.display = '';
-			} else {
-				globalContainer.replaceChild(collapsedTwistie, expandedTwistie);
+				workspaceHeader.replaceChild(collapsedTwistie, expandedTwistie);
 				bookmarksList.style.display = 'none';
 			}
 		};
 	}
 
 	private renderWorkspaceBookmarks(container: HTMLElement): HTMLElement {
-		const bookmarksList = document.createElement('ul');
-		container.appendChild(bookmarksList);
-
-		bookmarksList.style.marginTop = '0px';
-		bookmarksList.style.height = '100%';
-		bookmarksList.style.overflow = 'hidden';
-		bookmarksList.style.listStylePosition = 'inside';
-		bookmarksList.style.padding = '0px';
-
+		const bookmarksList = DOM.append(container, document.createElement('ul'));
 		const workspaceBookmarks = this.bookmarksManager.workspaceBookmarks;
+
 		for (let bookmark of workspaceBookmarks) {
-			const element = document.createElement('li');
-			bookmarksList.appendChild(element);
+			const element = DOM.append(bookmarksList, document.createElement('li'));
 			element.style.listStyleType = 'none';
 
 			const focusIcon = DOM.append(element, document.createElement('img'));
 			focusIcon.className = 'scope-tree-focus-icon-near-bookmark';
 
+			// Emphasize elements
 			element.addEventListener('mouseover', () => {
 				focusIcon.style.visibility = 'visible';
 				element.style.background = '#eee';
 			});
 
+			// Remove decorations
 			element.addEventListener('mouseout', () => {
 				focusIcon.style.visibility = 'hidden';
 				element.style.background = '';
@@ -162,36 +114,58 @@ export class BookmarksView extends ViewPane {
 			path.className = 'bookmark-path';
 			path.textContent = dirname(URI.parse(bookmark)).toString();
 		}
-
-		bookmarksList.style.display = 'none';
 
 		return bookmarksList;
 	}
 
-	private renderGlobalBookmarks(container: HTMLElement): HTMLElement {
-		const bookmarksList = document.createElement('ul');
-		container.appendChild(bookmarksList);
+	private renderGlobalBookmarksContainer(container: HTMLElement): void {
+		const globalHeader = DOM.append(container, document.createElement('div'));
+		globalHeader.className = 'bookmark-header';
 
-		bookmarksList.style.marginTop = '0px';
-		bookmarksList.style.height = '100%';
-		bookmarksList.style.overflow = 'hidden';
-		bookmarksList.style.listStylePosition = 'inside';
-		bookmarksList.style.padding = '0px';
+		const globalContainer = DOM.append(container, document.createElement('div'));
+		globalContainer.className = 'bookmarks-container';
+
+		const collapsedTwistie = DOM.$(Codicon.chevronRight.cssSelector);
+		const expandedTwistie = DOM.append(globalHeader, DOM.$(Codicon.chevronDown.cssSelector));
+
+		const bookmarkIcon = DOM.append(globalHeader, document.createElement('img'));
+		bookmarkIcon.className = 'bookmark-header-global-icon';
+
+		const containerTitle = DOM.append(globalHeader, document.createElement('span'));
+		containerTitle.innerText = 'GLOBAL BOOKMARKS';
+		containerTitle.style.color = 'black';
+
+		const bookmarksList = this.renderGlobalBookmarks(globalContainer);
+
+		globalHeader.onclick = () => {
+			if (bookmarksList.style.display === 'none') {
+				globalHeader.replaceChild(expandedTwistie, collapsedTwistie);
+				bookmarksList.style.display = '';
+			} else {
+				globalHeader.replaceChild(collapsedTwistie, expandedTwistie);
+				bookmarksList.style.display = 'none';
+			}
+		};
+	}
+
+	private renderGlobalBookmarks(container: HTMLElement): HTMLElement {
+		const bookmarksList = DOM.append(container, document.createElement('ul'));
 
 		const globalBookmarks = this.bookmarksManager.globalBookmarks;
 		for (let bookmark of globalBookmarks) {
-			const element = document.createElement('li');
-			bookmarksList.appendChild(element);
+			const element = DOM.append(bookmarksList, document.createElement('li'));
 			element.style.listStyleType = 'none';
 
 			const focusIcon = DOM.append(element, document.createElement('img'));
 			focusIcon.className = 'scope-tree-focus-icon-near-bookmark';
 
+			// Emphasize elements
 			element.addEventListener('mouseover', () => {
 				focusIcon.style.visibility = 'visible';
 				element.style.background = '#eee';
 			});
 
+			// Remove decorations
 			element.addEventListener('mouseout', () => {
 				focusIcon.style.visibility = 'hidden';
 				element.style.background = '';
@@ -209,8 +183,6 @@ export class BookmarksView extends ViewPane {
 			path.className = 'bookmark-path';
 			path.textContent = dirname(URI.parse(bookmark)).toString();
 		}
-
-		bookmarksList.style.display = 'none';
 
 		return bookmarksList;
 	}
