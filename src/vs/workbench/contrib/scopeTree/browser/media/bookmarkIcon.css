@@ -2,28 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-
-.bookmark-not-set{
-	content: url('bookmark-not-set.svg');
-	height: 50%;
-	padding-right: 5px;
-	object-fit: contain;
-}
-
-.bookmark-set-global{
-	content: url('bookmark-set-global.svg');
-	height: 50%;
-	padding-right: 5px;
-	object-fit: contain;
-}
-
-.bookmark-set-workspace{
-	content: url('bookmark-set-workspace.svg');
-	height: 50%;
-	padding-right: 5px;
-	object-fit: contain;
-}
-
 .bookmark-not-set{
 	content: url('bookmark-not-set.svg');
 	padding-right: 5px;
