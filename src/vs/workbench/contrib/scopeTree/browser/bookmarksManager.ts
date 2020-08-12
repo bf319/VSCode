@@ -6,6 +6,7 @@
 import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
 import { URI } from 'vs/base/common/uri';
 import { IBookmarksManager, BookmarkType } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
+import { Emitter } from 'vs/base/common/event';
 
 export class BookmarksManager implements IBookmarksManager {
 	static readonly WORKSPACE_BOOKMARKS_STORAGE_KEY: string = 'workbench.explorer.bookmarksWorkspace';
@@ -16,6 +17,9 @@ export class BookmarksManager implements IBookmarksManager {
 
 	globalBookmarks: Set<string> = new Set();
 	workspaceBookmarks: Set<string> = new Set();
+
+	private _onAddedBookmark = new Emitter<{ uri: URI, bookmarkType: BookmarkType }>();
+	public onAddedBookmark = this._onAddedBookmark.event;
 
 	constructor(
 		@IStorageService private readonly storageService: IStorageService
@@ -50,6 +54,8 @@ export class BookmarksManager implements IBookmarksManager {
 				this.saveWorkspaceBookmarks();
 			}
 		}
+
+		this._onAddedBookmark.fire({ uri: resource, bookmarkType: scope });
 	}
 
 	public getBookmarkType(resource: URI): BookmarkType {

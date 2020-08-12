@@ -16,7 +16,7 @@ import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { IViewDescriptorService } from 'vs/workbench/common/views';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { IBookmarksManager } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
+import { IBookmarksManager, BookmarkType } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
 import { Codicon } from 'vs/base/common/codicons';
 import { dirname, basename } from 'vs/base/common/resources';
 import { IExplorerService } from 'vs/workbench/contrib/files/common/files';
@@ -45,145 +45,117 @@ export class BookmarksView extends ViewPane {
 	protected renderBody(container: HTMLElement): void {
 		super.renderBody(container);
 
-		this.renderWorkspaceBookmarksContainer(container);
-		this.renderGlobalBookmarksContainer(container);
+		this.renderBookmarksContainer(container, BookmarkType.WORKSPACE);
+		this.renderBookmarksContainer(container, BookmarkType.GLOBAL);
+
+		this._register(this.bookmarksManager.onAddedBookmark(e => {
+			this.removeBookmark(e.uri);
+			this.addNewBookmark(e.uri, e.bookmarkType);
+		}));
 	}
 
-	private renderWorkspaceBookmarksContainer(container: HTMLElement): void {
-		const workspaceHeader = DOM.append(container, document.createElement('div'));
-		workspaceHeader.className = 'bookmark-header';
+	private renderBookmarksContainer(container: HTMLElement, scope: BookmarkType): void {
+		const header = DOM.append(container, document.createElement('div'));
+		header.className = 'bookmark-header';
 
-		const workspaceContainer = DOM.append(container, document.createElement('div'));
-		workspaceContainer.className = 'bookmarks-container';
+		const bookmarksContainer = DOM.append(container, document.createElement('div'));
+		bookmarksContainer.className = 'bookmarks-container';
 
 		const collapsedTwistie = DOM.$(Codicon.chevronRight.cssSelector);
-		const expandedTwistie = DOM.append(workspaceHeader, DOM.$(Codicon.chevronDown.cssSelector));
-		const workspaceIcon = DOM.append(workspaceHeader, document.createElement('img'));
-		workspaceIcon.className = 'bookmark-header-workspace-icon';
+		const expandedTwistie = DOM.append(header, DOM.$(Codicon.chevronDown.cssSelector));
+		const scopeIcon = DOM.append(header, document.createElement('img'));
+		scopeIcon.className = scope === BookmarkType.WORKSPACE ? 'bookmark-header-workspace-icon' : 'bookmark-header-global-icon';
 
-		const containerTitle = DOM.append(workspaceHeader, document.createElement('span'));
-		containerTitle.innerText = 'WORKSPACE BOOKMARKS';
+		const containerTitle = DOM.append(header, document.createElement('span'));
+		containerTitle.innerText = scope === BookmarkType.WORKSPACE ? 'WORKSPACE BOOKMARKS' : 'GLOBAL BOOKMARKS';
 		containerTitle.style.color = 'black';
 
-		const bookmarksList = this.renderWorkspaceBookmarks(workspaceContainer);
+		const bookmarksList = this.renderBookmarksLists(bookmarksContainer, scope);
 
-		workspaceHeader.onclick = () => {
+		header.onclick = () => {
 			// Toggle contents and twistie icon, and add some paddinnng
 			if (bookmarksList.style.display === 'none') {
-				workspaceHeader.replaceChild(expandedTwistie, collapsedTwistie);
+				header.replaceChild(expandedTwistie, collapsedTwistie);
 				bookmarksList.style.display = '';
 			} else {
-				workspaceHeader.replaceChild(collapsedTwistie, expandedTwistie);
+				header.replaceChild(collapsedTwistie, expandedTwistie);
 				bookmarksList.style.display = 'none';
 			}
 		};
 	}
 
-	private renderWorkspaceBookmarks(container: HTMLElement): HTMLElement {
+	private renderBookmarksLists(container: HTMLElement, scope: BookmarkType): HTMLElement {
 		const bookmarksList = DOM.append(container, document.createElement('ul'));
-		const workspaceBookmarks = this.bookmarksManager.workspaceBookmarks;
+		const bookmarks = scope === BookmarkType.WORKSPACE ? this.bookmarksManager.workspaceBookmarks : this.bookmarksManager.globalBookmarks;
+		bookmarksList.id = scope === BookmarkType.WORKSPACE ? 'workspaceBookmarksList' : 'globalBookmarksList';
 
-		for (let bookmark of workspaceBookmarks) {
-			const element = DOM.append(bookmarksList, document.createElement('li'));
-			element.style.listStyleType = 'none';
-
-			const focusIcon = DOM.append(element, document.createElement('img'));
-			focusIcon.className = 'scope-tree-focus-icon-near-bookmark';
-
-			// Emphasize elements
-			element.addEventListener('mouseover', () => {
-				focusIcon.style.visibility = 'visible';
-				element.style.background = '#eee';
-			});
-
-			// Remove decorations
-			element.addEventListener('mouseout', () => {
-				focusIcon.style.visibility = 'hidden';
-				element.style.background = '';
-			});
-
-			focusIcon.addEventListener('click', () => {
-				this.explorerService.setRoot(URI.parse(bookmark));
-			});
-
-			const name = DOM.append(element, document.createElement('span'));
-			name.textContent = basename(URI.parse(bookmark));
-			name.style.color = 'black';
-
-			const path = DOM.append(element, document.createElement('span'));
-			path.className = 'bookmark-path';
-			path.textContent = dirname(URI.parse(bookmark)).toString();
+		for (let bookmark of bookmarks) {
+			bookmarksList.appendChild(this.createBookmark(bookmark, scope));
 		}
 
 		return bookmarksList;
 	}
 
-	private renderGlobalBookmarksContainer(container: HTMLElement): void {
-		const globalHeader = DOM.append(container, document.createElement('div'));
-		globalHeader.className = 'bookmark-header';
+	private createBookmark(resourceAsString: string, bookmarkType: BookmarkType): HTMLLIElement {
+		const element = document.createElement('li');
+		element.style.listStyleType = 'none';
 
-		const globalContainer = DOM.append(container, document.createElement('div'));
-		globalContainer.className = 'bookmarks-container';
-
-		const collapsedTwistie = DOM.$(Codicon.chevronRight.cssSelector);
-		const expandedTwistie = DOM.append(globalHeader, DOM.$(Codicon.chevronDown.cssSelector));
-
-		const bookmarkIcon = DOM.append(globalHeader, document.createElement('img'));
-		bookmarkIcon.className = 'bookmark-header-global-icon';
-
-		const containerTitle = DOM.append(globalHeader, document.createElement('span'));
-		containerTitle.innerText = 'GLOBAL BOOKMARKS';
-		containerTitle.style.color = 'black';
-
-		const bookmarksList = this.renderGlobalBookmarks(globalContainer);
-
-		globalHeader.onclick = () => {
-			if (bookmarksList.style.display === 'none') {
-				globalHeader.replaceChild(expandedTwistie, collapsedTwistie);
-				bookmarksList.style.display = '';
-			} else {
-				globalHeader.replaceChild(collapsedTwistie, expandedTwistie);
-				bookmarksList.style.display = 'none';
-			}
-		};
-	}
-
-	private renderGlobalBookmarks(container: HTMLElement): HTMLElement {
-		const bookmarksList = DOM.append(container, document.createElement('ul'));
-
-		const globalBookmarks = this.bookmarksManager.globalBookmarks;
-		for (let bookmark of globalBookmarks) {
-			const element = DOM.append(bookmarksList, document.createElement('li'));
-			element.style.listStyleType = 'none';
-
-			const focusIcon = DOM.append(element, document.createElement('img'));
-			focusIcon.className = 'scope-tree-focus-icon-near-bookmark';
-
-			// Emphasize elements
-			element.addEventListener('mouseover', () => {
-				focusIcon.style.visibility = 'visible';
-				element.style.background = '#eee';
-			});
-
-			// Remove decorations
-			element.addEventListener('mouseout', () => {
-				focusIcon.style.visibility = 'hidden';
-				element.style.background = '';
-			});
-
-			focusIcon.addEventListener('click', () => {
-				this.explorerService.setRoot(URI.parse(bookmark));
-			});
-
-			const name = DOM.append(element, document.createElement('span'));
-			name.textContent = basename(URI.parse(bookmark));
-			name.style.color = 'black';
-
-			const path = DOM.append(element, document.createElement('span'));
-			path.className = 'bookmark-path';
-			path.textContent = dirname(URI.parse(bookmark)).toString();
+		if (bookmarkType === BookmarkType.WORKSPACE) {
+			element.id = 'workspaceBookmarkView_' + resourceAsString;
+		} else if (bookmarkType === BookmarkType.GLOBAL) {
+			element.id = 'globalBookmarkView_' + resourceAsString;
 		}
 
-		return bookmarksList;
+		const focusIcon = DOM.append(element, document.createElement('img'));
+		focusIcon.className = 'scope-tree-focus-icon-near-bookmark';
+
+		// Emphasize elements
+		element.addEventListener('mouseover', () => {
+			focusIcon.style.visibility = 'visible';
+			element.style.background = '#eee';
+		});
+
+		// Remove decorations
+		element.addEventListener('mouseout', () => {
+			focusIcon.style.visibility = 'hidden';
+			element.style.background = '';
+		});
+
+		focusIcon.addEventListener('click', () => {
+			this.explorerService.setRoot(URI.parse(resourceAsString));
+		});
+
+		const name = DOM.append(element, document.createElement('span'));
+		name.textContent = basename(URI.parse(resourceAsString));
+		name.style.color = 'black';
+
+		const path = DOM.append(element, document.createElement('span'));
+		path.className = 'bookmark-path';
+		path.textContent = dirname(URI.parse(resourceAsString)).toString();
+
+		return element;
+	}
+
+	private removeBookmark(resource: URI): void {
+		const workspaceBookmark = document.getElementById('workspaceBookmarkView_' + resource.toString());
+		if (workspaceBookmark) {
+			workspaceBookmark.remove();
+		}
+
+		const globalBookmark = document.getElementById('globalBookmarkView_' + resource.toString());
+		if (globalBookmark) {
+			globalBookmark.remove();
+		}
+	}
+
+	private addNewBookmark(resource: URI, bookmarkType: BookmarkType): void {
+		if (bookmarkType === BookmarkType.NONE) {
+			return;
+		}
+
+		const bookmarksList = bookmarkType === BookmarkType.WORKSPACE ? document.getElementById('workspaceBookmarksList') : document.getElementById('globalBookmarksList');
+		if (bookmarksList) {
+			bookmarksList.appendChild(this.createBookmark(resource.toString(), bookmarkType));
+		}
 	}
 }

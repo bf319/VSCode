@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
+import { Event } from 'vs/base/common/event';
 import { URI } from 'vs/base/common/uri';
 
 export interface IBookmarksManager {
@@ -13,6 +14,8 @@ export interface IBookmarksManager {
 	addBookmark(resource: URI, scope: BookmarkType): void;
 	getBookmarkType(resource: URI): BookmarkType;
 	toggleBookmarkType(resource: URI): BookmarkType;
+
+	onAddedBookmark: Event<{ uri: URI, bookmarkType: BookmarkType }>;
 }
 
 export const IBookmarksManager = createDecorator<IBookmarksManager>('bookmarksManager');
