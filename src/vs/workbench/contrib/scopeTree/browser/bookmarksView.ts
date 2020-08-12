@@ -73,7 +73,6 @@ export class BookmarksView extends ViewPane {
 		const bookmarksList = this.renderBookmarksLists(bookmarksContainer, scope);
 
 		header.onclick = () => {
-			// Toggle contents and twistie icon, and add some paddinnng
 			if (bookmarksList.style.display === 'none') {
 				header.replaceChild(expandedTwistie, collapsedTwistie);
 				bookmarksList.style.display = '';
