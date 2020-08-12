@@ -95,15 +95,10 @@ export class BookmarksView extends ViewPane {
 		return bookmarksList;
 	}
 
-	private createBookmark(resourceAsString: string, bookmarkType: BookmarkType): HTMLLIElement {
+	private createBookmark(resource: string, bookmarkType: BookmarkType): HTMLLIElement {
 		const element = document.createElement('li');
 		element.style.listStyleType = 'none';
-
-		if (bookmarkType === BookmarkType.WORKSPACE) {
-			element.id = 'workspaceBookmarkView_' + resourceAsString;
-		} else if (bookmarkType === BookmarkType.GLOBAL) {
-			element.id = 'globalBookmarkView_' + resourceAsString;
-		}
+		element.id = bookmarkType === BookmarkType.WORKSPACE ? 'workspaceBookmarkView_' + resource : 'globalBookmarkView_' + resource;
 
 		const focusIcon = DOM.append(element, document.createElement('img'));
 		focusIcon.className = 'scope-tree-focus-icon-near-bookmark';
@@ -121,16 +116,16 @@ export class BookmarksView extends ViewPane {
 		});
 
 		focusIcon.addEventListener('click', () => {
-			this.explorerService.setRoot(URI.parse(resourceAsString));
+			this.explorerService.setRoot(URI.parse(resource));
 		});
 
 		const name = DOM.append(element, document.createElement('span'));
-		name.textContent = basename(URI.parse(resourceAsString));
+		name.textContent = basename(URI.parse(resource));
 		name.style.color = 'black';
 
 		const path = DOM.append(element, document.createElement('span'));
 		path.className = 'bookmark-path';
-		path.textContent = dirname(URI.parse(resourceAsString)).toString();
+		path.textContent = dirname(URI.parse(resource)).toString();
 
 		return element;
 	}
