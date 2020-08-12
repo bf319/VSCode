@@ -2,24 +2,93 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-
 .bookmark-not-set{
 	content: url('bookmark-not-set.svg');
-	height: 50%;
 	padding-right: 5px;
+	padding-bottom: 2px;
 	object-fit: contain;
 }
 
 .bookmark-set-global{
 	content: url('bookmark-set-global.svg');
-	height: 50%;
+	padding-bottom: 2px;
 	padding-right: 5px;
 	object-fit: contain;
 }
 
 .bookmark-set-workspace{
 	content: url('bookmark-set-workspace.svg');
-	height: 50%;
+	padding-bottom: 2px;
 	padding-right: 5px;
 	object-fit: contain;
+}
+
+.bookmark-header {
+	height: 22px;
+	font-size: 11px;
+	font-weight: bold;
+	text-transform: uppercase;
+	overflow: hidden;
+	display: flex;
+	cursor: pointer;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: row;
+}
+
+.bookmark-path {
+	opacity: .7;
+	margin-left: 0.5em;
+	font-size: 0.9em;
+	white-space: pre;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.bookmark-header-global-icon {
+	content: url('bookmark-set-global.svg');
+	padding-right: 5px;
+	padding-bottom: 5px;
+	object-fit: contain;
+}
+
+.bookmark-header-workspace-icon {
+	content: url('bookmark-set-workspace.svg');
+	padding-right: 5px;
+	padding-bottom: 5px;
+	object-fit: contain;
+}
+
+.bookmarks-container {
+	padding-left: 20px;
+	max-height: 50%;
+	overflow-y: scroll;
+}
+
+.bookmarks-container ul {
+	margin-top: 0px;
+	height: 100%;
+	padding: 0px;
+}
+
+.scope-tree-focus-icon-near-bookmark {
+	content: url('scope.svg');
+	float: left;
+	align-self: center;
+	visibility: hidden;
+	height: 50%;
+	padding-right: 5px;
+	padding-top: 1px;
+}
+
+::-webkit-scrollbar {
+	-webkit-appearance: none;
+	width: 7px;
+}
+
+::-webkit-scrollbar-thumb {
+	border-radius: 4px;
+	background-color: rgba(0, 0, 0, 0.096);
+	box-shadow: 0 0 1px rgba(255, 255, 255, .5);
 }
