@@ -242,7 +242,7 @@ export class ListView<T> implements ISpliceable<T>, IDisposable {
 
 	private readonly _onDidChangeContentHeight = new Emitter<number>();
 	readonly onDidChangeContentHeight: Event<number> = Event.latch(this._onDidChangeContentHeight.event);
-	get contentHeight(): number { return this.rangeMap.size; }
+	get contentHeight(): number { return this.rangeMap.size + 24; }
 
 	get onDidScroll(): Event<ScrollEvent> { return this.scrollableElement.onScroll; }
 	get onWillScroll(): Event<ScrollEvent> { return this.scrollableElement.onWillScroll; }

@@ -1403,7 +1403,6 @@ export abstract class AbstractTree<T, TFilterData, TRef> implements IDisposable 
 		if (this.typeFilterController) {
 			result = Event.any(result, Event.map(this.typeFilterController.onDidChangeEmptyState, () => this.contentHeight));
 		}
-
 		return result;
 	}
 

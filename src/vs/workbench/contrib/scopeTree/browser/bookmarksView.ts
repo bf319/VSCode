@@ -20,10 +20,77 @@ import { IBookmarksManager, BookmarkType } from 'vs/workbench/contrib/scopeTree/
 import { Codicon } from 'vs/base/common/codicons';
 import { dirname, basename } from 'vs/base/common/resources';
 import { IExplorerService } from 'vs/workbench/contrib/files/common/files';
+import { List, IListAccessibilityProvider } from 'vs/base/browser/ui/list/listWidget';
+import { IListVirtualDelegate, IListRenderer } from 'vs/base/browser/ui/list/list';
+import { ScrollbarVisibility } from 'vs/base/common/scrollable';
+import { RunOnceScheduler } from 'vs/base/common/async';
+import { Orientation } from 'vs/base/browser/ui/splitview/splitview';
+import { ResourceLabels } from 'vs/workbench/browser/labels';
+
+class Bookmark {
+	public content: string;
+	public id: string;
+
+	constructor(content: string, id: string) {
+		this.content = content;
+		this.id = id;
+	}
+}
+
+export class BookmarksDelegate implements IListVirtualDelegate<Bookmark> {
+
+	static readonly ITEM_HEIGHT = 22;
+
+	getHeight(element: Bookmark): number {
+		return BookmarksDelegate.ITEM_HEIGHT;
+	}
+
+	getTemplateId(element: Bookmark): string {
+		return 'BookmarksRenderer';
+	}
+}
+
+interface IBookmarkTemplateData {
+	container: HTMLElement;
+}
+
+class BookmarksRenderer implements IListRenderer<Bookmark, IBookmarkTemplateData> {
+	static readonly ID = 'BookmarksRenderer';
+
+	constructor(
+	) {
+		// noop
+	}
+
+	get templateId() {
+		return 'BookmarksRenderer';
+	}
+
+	// container = monaco-list-row
+	renderTemplate(container: HTMLElement): IBookmarkTemplateData {
+		container.style.height = '100px';
+		container.style.color = 'green';
+		container.id = 'bogdan123';
+
+		DOM.append(container, document.createElement('div'));
+
+		return { container };
+	}
+
+	renderElement(element: Bookmark, index: number, templateData: IBookmarkTemplateData): void {
+	}
+
+	disposeTemplate(templateData: IBookmarkTemplateData): void {
+	}
+}
 
 export class BookmarksView extends ViewPane {
 	static readonly ID: string = 'workbench.explorer.displayBookmarksView';
 	static readonly NAME = 'Bookmarks';
+
+	private list!: List<Bookmark>;
+	private listLabels!: ResourceLabels;
+	private bookmarks: Bookmark[] = [];
 
 	constructor(
 		options: IViewletViewOptions,
@@ -40,19 +107,59 @@ export class BookmarksView extends ViewPane {
 		@IExplorerService private readonly explorerService: IExplorerService
 	) {
 		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
+
+		for (let i = 0; i < 100; i++) {
+			this.bookmarks.push(new Bookmark('bookmark' + i, 'id' + i));
+		}
 	}
 
 	protected renderBody(container: HTMLElement): void {
 		super.renderBody(container);
 
-		this.renderBookmarksContainer(container, BookmarkType.WORKSPACE);
-		this.renderBookmarksContainer(container, BookmarkType.GLOBAL);
+		const delegate = new BookmarksDelegate();
+		const renderer = new BookmarksRenderer();
 
-		this._register(this.bookmarksManager.onAddedBookmark(e => {
-			this.removeBookmark(e.uri);
-			this.addNewBookmark(e.uri, e.bookmarkType);
-		}));
+		this.listLabels = this.instantiationService.createInstance(ResourceLabels, { onDidChangeVisibility: this.onDidChangeBodyVisibility });
+		this.list = new List<Bookmark>('Bookmarks', container, delegate, [renderer], {
+			verticalScrollMode: ScrollbarVisibility.Auto
+		});
+		// this.list = <WorkbenchList<Bookmark>>this.instantiationService.createInstance(WorkbenchList, 'Bookmarks', container, delegate, [renderer], {
+		// 	accessibilityProvider: new BookmarksAccessibilityProvider()
+		// });
+
+		this.list.splice(0, 0, this.bookmarks);
+
+		// this.renderBookmarksContainer(container, BookmarkType.WORKSPACE);
+		// this.renderBookmarksContainer(container, BookmarkType.GLOBAL);
+
+		// this._register(this.bookmarksManager.onAddedBookmark(e => {
+		// 	this.removeBookmark(e.uri);
+		// 	this.addNewBookmark(e.uri, e.bookmarkType);
+		// }));
 	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	private renderBookmarksContainer(container: HTMLElement, scope: BookmarkType): void {
 		const header = DOM.append(container, document.createElement('div'));
@@ -151,5 +258,16 @@ export class BookmarksView extends ViewPane {
 		if (bookmarksList) {
 			bookmarksList.appendChild(this.createBookmark(resource.toString(), bookmarkType));
 		}
+	}
+}
+
+class BookmarksAccessibilityProvider implements IListAccessibilityProvider<Bookmark> {
+
+	getWidgetAriaLabel(): string {
+		return 'sth';
+	}
+
+	getAriaLabel(element: Bookmark): string | null {
+		return 'sth';
 	}
 }
