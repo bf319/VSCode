@@ -70,6 +70,7 @@
 	margin-top: 0px;
 	height: 100%;
 	padding: 0px;
+	overflow-x: hidden;
 }
 
 .scope-tree-focus-icon-near-bookmark {
@@ -80,6 +81,13 @@
 	height: 50%;
 	padding-right: 5px;
 	padding-top: 1px;
+}
+
+.search-bookmark {
+	margin-left: 20px;
+	margin-top: 2.5px;
+	margin-bottom: 2.5px;
+	width: 90%;
 }
 
 ::-webkit-scrollbar {

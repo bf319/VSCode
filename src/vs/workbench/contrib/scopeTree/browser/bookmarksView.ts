@@ -45,12 +45,14 @@ export class BookmarksView extends ViewPane {
 	protected renderBody(container: HTMLElement): void {
 		super.renderBody(container);
 
+		this.renderSearchBar(container);
 		this.renderBookmarksContainer(container, BookmarkType.WORKSPACE);
 		this.renderBookmarksContainer(container, BookmarkType.GLOBAL);
 
 		this._register(this.bookmarksManager.onAddedBookmark(e => {
 			this.removeBookmark(e.uri);
 			this.addNewBookmark(e.uri, e.bookmarkType);
+			this.filterBookmarks(e.bookmarkType);
 		}));
 	}
 
@@ -61,8 +63,8 @@ export class BookmarksView extends ViewPane {
 		const bookmarksContainer = DOM.append(container, document.createElement('div'));
 		bookmarksContainer.className = 'bookmarks-container';
 
-		const collapsedTwistie = DOM.$(Codicon.chevronRight.cssSelector);
-		const expandedTwistie = DOM.append(header, DOM.$(Codicon.chevronDown.cssSelector));
+		const collapsedTwistie = DOM.append(header, DOM.$(Codicon.chevronRight.cssSelector));
+		const expandedTwistie = DOM.$(Codicon.chevronDown.cssSelector);
 		const scopeIcon = DOM.append(header, document.createElement('img'));
 		scopeIcon.className = scope === BookmarkType.WORKSPACE ? 'bookmark-header-workspace-icon' : 'bookmark-header-global-icon';
 
@@ -92,6 +94,8 @@ export class BookmarksView extends ViewPane {
 			bookmarksList.appendChild(this.createBookmark(bookmark, scope));
 		}
 
+		bookmarksList.style.display = 'none';
+
 		return bookmarksList;
 	}
 
@@ -119,13 +123,22 @@ export class BookmarksView extends ViewPane {
 			this.explorerService.setRoot(URI.parse(resource));
 		});
 
+		const prevName = DOM.append(element, document.createElement('span'));
+		prevName.textContent = '';
+		prevName.style.color = 'black';
+
 		const name = DOM.append(element, document.createElement('span'));
 		name.textContent = basename(URI.parse(resource));
 		name.style.color = 'black';
 
+		const postName = DOM.append(element, document.createElement('span'));
+		postName.textContent = '';
+		postName.style.color = 'black';
+
 		const path = DOM.append(element, document.createElement('span'));
 		path.className = 'bookmark-path';
 		path.textContent = dirname(URI.parse(resource)).toString();
+		path.style.whiteSpace = 'nowrap';
 
 		return element;
 	}
@@ -150,6 +163,46 @@ export class BookmarksView extends ViewPane {
 		const bookmarksList = bookmarkType === BookmarkType.WORKSPACE ? document.getElementById('workspaceBookmarksList') : document.getElementById('globalBookmarksList');
 		if (bookmarksList) {
 			bookmarksList.appendChild(this.createBookmark(resource.toString(), bookmarkType));
+		}
+	}
+
+	private renderSearchBar(container: HTMLElement) {
+		const searchBar = DOM.append(container, document.createElement('input'));
+		searchBar.id = 'searchForBookmark';
+		searchBar.addEventListener('keyup', () => {
+			this.filterBookmarks(BookmarkType.WORKSPACE);
+			this.filterBookmarks(BookmarkType.GLOBAL);
+		});
+		searchBar.placeholder = 'Search bookmarks';
+		searchBar.className = 'search-bookmark';
+	}
+
+	private filterBookmarks(scope: BookmarkType) {
+		const input = document.getElementById('searchForBookmark') as HTMLInputElement;
+		const filter = input.value.toLowerCase();
+
+		const bookmarks = scope === BookmarkType.WORKSPACE ? document.getElementById('workspaceBookmarksList')?.getElementsByTagName('li') :
+			document.getElementById('globalBookmarksList')?.getElementsByTagName('li');
+
+		if (bookmarks) {
+			for (let i = 0; i < bookmarks.length; i++) {
+				const text1 = bookmarks[i].getElementsByTagName('span')[0];
+				const text2 = bookmarks[i].getElementsByTagName('span')[1];
+				const text3 = bookmarks[i].getElementsByTagName('span')[2];
+				const txtValue = text1.innerText + text2.innerText + text3.innerText;
+				const searchIndex = txtValue.toLowerCase().indexOf(filter);
+
+				if (searchIndex > -1) {
+					bookmarks[i].style.display = '';
+					text1.textContent = txtValue.substring(0, searchIndex);
+					text2.textContent = txtValue.substr(searchIndex, filter.length);
+					text2.style.color = '#F38518';
+					text2.style.fontWeight = 'bold';
+					text3.textContent = txtValue.substring(searchIndex + filter.length, txtValue.length);
+				} else {
+					bookmarks[i].style.display = 'none';
+				}
+			}
 		}
 	}
 }
