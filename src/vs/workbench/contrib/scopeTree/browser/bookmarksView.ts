@@ -23,7 +23,7 @@ import { IExplorerService } from 'vs/workbench/contrib/files/common/files';
 import { List } from 'vs/base/browser/ui/list/listWidget';
 import { IListVirtualDelegate, IListRenderer } from 'vs/base/browser/ui/list/list';
 import { ScrollbarVisibility } from 'vs/base/common/scrollable';
-import { DisposableStore, IDisposable } from 'vs/base/common/lifecycle';
+import { IDisposable, Disposable } from 'vs/base/common/lifecycle';
 
 class Bookmark {
 	public resource: URI;
@@ -58,6 +58,21 @@ interface IBookmarkTemplateData {
 	elementDisposable: IDisposable;
 }
 
+class BookmarkDisposable implements IDisposable {
+	constructor(private focusIcon: HTMLElement,
+		private name: HTMLElement,
+		private path: HTMLElement,
+		private bookmarkContainer: HTMLElement
+	) { }
+
+	dispose(): void {
+		this.focusIcon.remove();
+		this.name.remove();
+		this.path.remove();
+		this.bookmarkContainer.remove();
+	}
+}
+
 class BookmarksRenderer implements IListRenderer<Bookmark, IBookmarkTemplateData> {
 	static readonly ID = 'BookmarksRenderer';
 
@@ -69,15 +84,16 @@ class BookmarksRenderer implements IListRenderer<Bookmark, IBookmarkTemplateData
 	}
 
 	get templateId() {
-		return 'BookmarksRenderer';
+		return BookmarksRenderer.ID;
 	}
 
 	renderTemplate(container: HTMLElement): IBookmarkTemplateData {
-		return { bookmarkContainer: container, elementDisposable: new DisposableStore() };
+		return { bookmarkContainer: container, elementDisposable: Disposable.None };
 	}
 
 	renderElement(element: Bookmark, index: number, templateData: IBookmarkTemplateData): void {
-		templateData.bookmarkContainer.appendChild(this.renderBookmark(element));
+		templateData.elementDisposable.dispose();
+		templateData.elementDisposable = this.renderBookmark(element, templateData);
 	}
 
 	disposeTemplate(templateData: IBookmarkTemplateData): void {
@@ -85,13 +101,11 @@ class BookmarksRenderer implements IListRenderer<Bookmark, IBookmarkTemplateData
 	}
 
 	disposeElement(element: Bookmark, index: number, templateData: IBookmarkTemplateData): void {
-		while (templateData.bookmarkContainer.firstChild) {
-			templateData.bookmarkContainer.removeChild(templateData.bookmarkContainer.firstChild);
-		}
+		templateData.elementDisposable.dispose();
 	}
 
-	private renderBookmark(bookmark: Bookmark): HTMLElement {
-		const bookmarkElement = document.createElement('div');
+	private renderBookmark(bookmark: Bookmark, templateData: IBookmarkTemplateData): IDisposable {
+		const bookmarkElement = DOM.append(templateData.bookmarkContainer, document.createElement('div'));
 		bookmarkElement.id = this.bookmarkType === BookmarkType.WORKSPACE ? 'workspaceBookmarkView_' + bookmark.resource.toString() : 'globalBookmarkView_' + bookmark.resource.toString();
 
 		const focusIcon = DOM.append(bookmarkElement, document.createElement('img'));
@@ -119,7 +133,7 @@ class BookmarksRenderer implements IListRenderer<Bookmark, IBookmarkTemplateData
 		path.className = 'bookmark-path';
 		path.textContent = bookmark.getParent();
 
-		return bookmarkElement;
+		return new BookmarkDisposable(focusIcon, name, path, bookmarkElement);
 	}
 }
 
