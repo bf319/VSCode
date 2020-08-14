@@ -181,18 +181,7 @@ export class BookmarksView extends ViewPane {
 			verticalScrollMode: ScrollbarVisibility.Auto
 		});
 
-		const workspaceBookmarks = Array.from(this.bookmarksManager.workspaceBookmarks).sort((path1: string, path2: string) => {
-			const compare = basename(URI.parse(path1)).localeCompare(basename(URI.parse(path2)));
-
-			if (compare) {
-				return compare;
-			}
-
-			// Directories with identical names are sorted by the length of their path (might need to consider alternatives)
-			return path1.split('/').length - path2.split('/').length;
-
-		});
-
+		const workspaceBookmarks = this.sortBookmarkByName(this.bookmarksManager.workspaceBookmarks);
 		for (let i = 0; i < workspaceBookmarks.length; i++) {
 			this.workspaceBookmarksList.splice(i, 0, [new Bookmark(workspaceBookmarks[i])]);
 		}
@@ -207,17 +196,7 @@ export class BookmarksView extends ViewPane {
 			verticalScrollMode: ScrollbarVisibility.Auto
 		});
 
-		const globalBookmarks = Array.from(this.bookmarksManager.globalBookmarks).sort((path1: string, path2: string) => {
-			const compare = basename(URI.parse(path1)).localeCompare(basename(URI.parse(path2)));
-
-			if (compare) {
-				return compare;
-			}
-
-			// Directories with identical names are sorted by the length of their path (might need to consider alternatives)
-			return path1.split('/').length - path2.split('/').length;
-		});
-
+		const globalBookmarks = this.sortBookmarkByName(this.bookmarksManager.globalBookmarks);
 		for (let i = 0; i < globalBookmarks.length; i++) {
 			this.globalBookmarksList.splice(i, 0, [new Bookmark(globalBookmarks[i])]);
 		}
@@ -260,5 +239,18 @@ export class BookmarksView extends ViewPane {
 		if (this.globalBookmarksList) {
 			this.globalBookmarksList.layout(height * 0.45, width);
 		}
+	}
+
+	private sortBookmarkByName(bookmarks: Set<string>) {
+		return Array.from(bookmarks).sort((path1: string, path2: string) => {
+			const compare = basename(URI.parse(path1)).localeCompare(basename(URI.parse(path2)));
+
+			if (compare) {
+				return compare;
+			}
+
+			// Directories with identical names are sorted by the length of their path (might need to consider alternatives)
+			return path1.split('/').length - path2.split('/').length;
+		});
 	}
 }
