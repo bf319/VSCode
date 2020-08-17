@@ -3,14 +3,12 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import 'vs/css!./media/scopeTreeFileIcon';
 import { IBreadcrumbObserver } from 'vs/workbench/browser/parts/editor/breadcrumbObserver';
 import { IFileStat, FileKind } from 'vs/platform/files/common/files';
 import { IExplorerService } from 'vs/workbench/contrib/files/common/files';
 import { IResourceLabel } from 'vs/workbench/browser/labels';
 import { URI } from 'vs/base/common/uri';
-import 'vs/css!./media/scopeTreeFileIcon';
-import { WorkbenchDataTree, WorkbenchAsyncDataTree } from 'vs/platform/list/browser/listService';
-import { FuzzyScore } from 'vs/base/common/filters';
 import { Tree } from 'vs/workbench/browser/parts/editor/breadcrumbsPicker';
 
 export class BreadcrumbObserver implements IBreadcrumbObserver {

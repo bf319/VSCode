@@ -7,8 +7,6 @@ import { createDecorator } from 'vs/platform/instantiation/common/instantiation'
 import { URI } from 'vs/base/common/uri';
 import { FileKind } from 'vs/platform/files/common/files';
 import { IResourceLabel } from 'vs/workbench/browser/labels';
-import { FuzzyScore } from 'vs/base/common/filters';
-import { WorkbenchDataTree, WorkbenchAsyncDataTree } from 'vs/platform/list/browser/listService';
 import { Tree } from 'vs/workbench/browser/parts/editor/breadcrumbsPicker';
 
 export interface IBreadcrumbObserver {
