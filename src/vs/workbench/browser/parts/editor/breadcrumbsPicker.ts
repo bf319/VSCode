@@ -30,6 +30,7 @@ import { IFileIconTheme, IThemeService } from 'vs/platform/theme/common/themeSer
 import { IListAccessibilityProvider } from 'vs/base/browser/ui/list/listWidget';
 import { IModeService } from 'vs/editor/common/services/modeService';
 import { localize } from 'vs/nls';
+import { IBreadcrumbObserver } from 'vs/workbench/browser/parts/editor/breadcrumbObserver';
 
 export function createBreadcrumbsPicker(instantiationService: IInstantiationService, parent: HTMLElement, element: BreadcrumbElement): BreadcrumbsPicker {
 	return element instanceof FileElement
@@ -233,6 +234,7 @@ class FileRenderer implements ITreeRenderer<IFileStat | IWorkspaceFolder, FuzzyS
 	constructor(
 		private readonly _labels: ResourceLabels,
 		@IConfigurationService private readonly _configService: IConfigurationService,
+		@IBreadcrumbObserver private readonly _breadcrumbObserver: IBreadcrumbObserver
 	) { }
 
 
@@ -259,6 +261,8 @@ class FileRenderer implements ITreeRenderer<IFileStat | IWorkspaceFolder, FuzzyS
 			matches: createMatches(node.filterData),
 			extraClasses: ['picker-item']
 		});
+
+		this._breadcrumbObserver.renderFocusIcon(resource, fileKind, templateData);
 	}
 
 	disposeTemplate(templateData: IResourceLabel): void {
@@ -367,6 +371,7 @@ export class BreadcrumbsFilePicker extends BreadcrumbsPicker {
 		@IThemeService themeService: IThemeService,
 		@IConfigurationService configService: IConfigurationService,
 		@IWorkspaceContextService private readonly _workspaceService: IWorkspaceContextService,
+		@IBreadcrumbObserver private readonly breadcrumbObserver: IBreadcrumbObserver
 	) {
 		super(parent, instantiationService, themeService, configService);
 	}
@@ -386,7 +391,7 @@ export class BreadcrumbsFilePicker extends BreadcrumbsPicker {
 		const labels = this._instantiationService.createInstance(ResourceLabels, DEFAULT_LABELS_CONTAINER /* TODO@Jo visibility propagation */);
 		this._disposables.add(labels);
 
-		return <WorkbenchAsyncDataTree<IWorkspace | URI, IWorkspaceFolder | IFileStat, FuzzyScore>>this._instantiationService.createInstance(
+		const tree = <WorkbenchAsyncDataTree<IWorkspace | URI, IWorkspaceFolder | IFileStat, FuzzyScore>>this._instantiationService.createInstance(
 			WorkbenchAsyncDataTree,
 			'BreadcrumbsFilePicker',
 			container,
@@ -404,6 +409,10 @@ export class BreadcrumbsFilePicker extends BreadcrumbsPicker {
 					listBackground: breadcrumbsPickerBackground
 				},
 			});
+
+		this.breadcrumbObserver.registerTreeListeners(tree);
+
+		return tree;
 	}
 
 	_setInput(element: BreadcrumbElement): Promise<void> {
