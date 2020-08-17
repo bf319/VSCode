@@ -161,6 +161,9 @@ import 'vs/workbench/contrib/scopeTree/browser/explorerViewlet';
 import 'vs/workbench/contrib/files/browser/fileActions.contribution';
 import 'vs/workbench/contrib/scopeTree/browser/files.contribution';
 
+// Bookmarks
+import 'vs/workbench/contrib/scopeTree/browser/bookmarks.contribution';
+
 // Backup
 import 'vs/workbench/contrib/backup/common/backup.contribution';
 
