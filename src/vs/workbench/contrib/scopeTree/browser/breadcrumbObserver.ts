@@ -11,6 +11,7 @@ import { URI } from 'vs/base/common/uri';
 import 'vs/css!./media/scopeTreeFileIcon';
 import { WorkbenchDataTree, WorkbenchAsyncDataTree } from 'vs/platform/list/browser/listService';
 import { FuzzyScore } from 'vs/base/common/filters';
+import { Tree } from 'vs/workbench/browser/parts/editor/breadcrumbsPicker';
 
 export class BreadcrumbObserver implements IBreadcrumbObserver {
 	declare readonly _serviceBrand: undefined;
@@ -19,7 +20,7 @@ export class BreadcrumbObserver implements IBreadcrumbObserver {
 		@IExplorerService private readonly explorerService: IExplorerService
 	) { }
 
-	registerTreeListeners(tree: WorkbenchDataTree<any, any, FuzzyScore> | WorkbenchAsyncDataTree<any, any, FuzzyScore>): void {
+	registerTreeListeners(tree: Tree<any, any>): void {
 		tree.onMouseOver(e => {
 			const element = e.element;
 			if (element) {

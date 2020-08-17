@@ -46,7 +46,7 @@ interface ILayoutInfo {
 	inputHeight: number;
 }
 
-type Tree<I, E> = WorkbenchDataTree<I, E, FuzzyScore> | WorkbenchAsyncDataTree<I, E, FuzzyScore>;
+export type Tree<I, E> = WorkbenchDataTree<I, E, FuzzyScore> | WorkbenchAsyncDataTree<I, E, FuzzyScore>;
 
 export interface SelectEvent {
 	target: any;

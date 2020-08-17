@@ -9,11 +9,12 @@ import { FileKind } from 'vs/platform/files/common/files';
 import { IResourceLabel } from 'vs/workbench/browser/labels';
 import { FuzzyScore } from 'vs/base/common/filters';
 import { WorkbenchDataTree, WorkbenchAsyncDataTree } from 'vs/platform/list/browser/listService';
+import { Tree } from 'vs/workbench/browser/parts/editor/breadcrumbsPicker';
 
 export interface IBreadcrumbObserver {
 	readonly _serviceBrand: undefined;
 	renderFocusIcon(resource: URI, fileKind: FileKind, templateData: IResourceLabel): void;
-	registerTreeListeners(tree: WorkbenchDataTree<any, any, FuzzyScore> | WorkbenchAsyncDataTree<any, any, FuzzyScore>): void;
+	registerTreeListeners(tree: Tree<any, any>): void;
 }
 
 export const IBreadcrumbObserver = createDecorator<IBreadcrumbObserver>('breadcrumbObserver');
