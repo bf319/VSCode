@@ -34,6 +34,7 @@
 	box-sizing: border-box;
 	display: flex;
 	flex-direction: row;
+	padding-left: 20px;
 }
 
 .bookmark-path {
@@ -61,15 +62,7 @@
 }
 
 .bookmarks-container {
-	padding-left: 20px;
-	max-height: 50%;
-	overflow-y: scroll;
-}
-
-.bookmarks-container ul {
-	margin-top: 0px;
-	height: 100%;
-	padding: 0px;
+	height: 45%;
 }
 
 .scope-tree-focus-icon-near-bookmark {
@@ -79,16 +72,5 @@
 	visibility: hidden;
 	height: 50%;
 	padding-right: 5px;
-	padding-top: 1px;
-}
-
-::-webkit-scrollbar {
-	-webkit-appearance: none;
-	width: 7px;
-}
-
-::-webkit-scrollbar-thumb {
-	border-radius: 4px;
-	background-color: rgba(0, 0, 0, 0.096);
-	box-shadow: 0 0 1px rgba(255, 255, 255, .5);
+	padding-top: 3px;
 }

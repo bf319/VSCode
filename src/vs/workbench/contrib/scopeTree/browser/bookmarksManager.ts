@@ -12,9 +12,6 @@ export class BookmarksManager implements IBookmarksManager {
 	static readonly WORKSPACE_BOOKMARKS_STORAGE_KEY: string = 'workbench.explorer.bookmarksWorkspace';
 	static readonly GLOBAL_BOOKMARKS_STORAGE_KEY: string = 'workbench.explorer.bookmarksGlobal';
 
-	// Yellow bookmark = workspace
-	// Red bookmark = global
-
 	globalBookmarks: Set<string> = new Set();
 	workspaceBookmarks: Set<string> = new Set();
 
