@@ -36,16 +36,6 @@
 	flex-direction: row;
 }
 
-.bookmark-path {
-	opacity: .7;
-	margin-left: 0.5em;
-	font-size: 0.9em;
-	white-space: pre;
-	min-width: 0;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
 .bookmark-header-global-icon {
 	content: url('bookmark-set-global.svg');
 	padding-right: 5px;

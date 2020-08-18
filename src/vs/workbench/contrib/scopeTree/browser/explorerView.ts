@@ -298,7 +298,7 @@ export class ExplorerView extends ViewPane {
 
 	protected layoutBody(height: number, width: number): void {
 		super.layoutBody(height, width);
-		this.tree.layout(height, width);
+		this.tree.layout(height - 8, width);
 	}
 
 	renderBody(container: HTMLElement): void {
@@ -306,12 +306,16 @@ export class ExplorerView extends ViewPane {
 		this.renderParentButton();
 
 		const parentContainer = document.createElement('div');
-		const breadcrumbBackround = DOM.append(parentContainer, document.createElement('div'));
+		const breadcrumbBackground = document.createElement('div');
+
+		if (this.isBodyVisible()) {
+			container.parentElement?.insertBefore(breadcrumbBackground, container);
+		}
 
 		DOM.addClass(this.breadcrumb, 'breadcrumb-file-tree');
-		DOM.addClass(breadcrumbBackround, 'breadcrumb-background');
+		DOM.addClass(breadcrumbBackground, 'breadcrumb-background');
 		DOM.append(container, parentContainer);
-		DOM.append(breadcrumbBackround, this.breadcrumb);
+		DOM.append(breadcrumbBackground, this.breadcrumb);
 
 		this.treeContainer = DOM.append(parentContainer, DOM.$('.explorer-folders-view'));
 
@@ -345,6 +349,9 @@ export class ExplorerView extends ViewPane {
 				}
 				// Find resource to focus from active editor input if set
 				this.selectActiveFile(false, true);
+				container.parentElement?.insertBefore(breadcrumbBackground, container);
+			} else {
+				container.parentElement?.removeChild(breadcrumbBackground);
 			}
 		}));
 
