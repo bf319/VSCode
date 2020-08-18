@@ -24,8 +24,9 @@ import { IListVirtualDelegate, IKeyboardNavigationLabelProvider } from 'vs/base/
 import { ScrollbarVisibility } from 'vs/base/common/scrollable';
 import { IDisposable, Disposable } from 'vs/base/common/lifecycle';
 import { WorkbenchObjectTree } from 'vs/platform/list/browser/listService';
-import { FuzzyScore } from 'vs/base/common/filters';
+import { FuzzyScore, createMatches } from 'vs/base/common/filters';
 import { ITreeRenderer, ITreeNode, ITreeElement } from 'vs/base/browser/ui/tree/tree';
+import { IResourceLabel, ResourceLabels } from 'vs/workbench/browser/labels';
 
 class Bookmark {
 	public resource: URI;
@@ -57,21 +58,47 @@ export class BookmarksDelegate implements IListVirtualDelegate<Bookmark> {
 
 interface IBookmarkTemplateData {
 	bookmarkContainer: HTMLElement;
+	label: IResourceLabel;
 	elementDisposable: IDisposable;
 }
 
 class BookmarkDisposable implements IDisposable {
-	constructor(private focusIcon: HTMLElement,
-		private name: HTMLElement,
-		private path: HTMLElement,
-		private bookmarkContainer: HTMLElement
-	) { }
+	private _focusIcon!: HTMLElement;
+
+	constructor(container: HTMLElement,
+		private readonly stat: URI,
+		@IExplorerService private readonly explorerService: IExplorerService) {
+		this.renderFocusIcon(container);
+		this.addListeners(container);
+	}
+
+	get focusIcon(): HTMLElement {
+		return this._focusIcon;
+	}
+
+	private addListeners(container: HTMLElement): void {
+		container.addEventListener('mouseover', () => {
+			this._focusIcon.style.visibility = 'visible';
+		});
+		container.addEventListener('mouseout', () => {
+			this._focusIcon.style.visibility = 'hidden';
+		});
+		container.addEventListener('dblclick', async () => {
+			await this.explorerService.select(this.stat, true);	// Should also expand directory
+		});
+		this._focusIcon.addEventListener('click', () => {
+			this.explorerService.setRoot(this.stat);
+		});
+	}
+
+	private renderFocusIcon(container: HTMLElement): void {
+		this._focusIcon = document.createElement('img');
+		this._focusIcon.className = 'scope-tree-focus-icon-near-bookmark';
+		container.insertBefore(this._focusIcon, container.firstChild);
+	}
 
 	dispose(): void {
-		this.focusIcon.remove();
-		this.name.remove();
-		this.path.remove();
-		this.bookmarkContainer.remove();
+		this._focusIcon.remove();
 	}
 }
 
@@ -79,7 +106,7 @@ class BookmarksRenderer implements ITreeRenderer<Bookmark, FuzzyScore, IBookmark
 	static readonly ID = 'BookmarksRenderer';
 
 	constructor(
-		private readonly bookmarkType: BookmarkType,
+		private labels: ResourceLabels,
 		private readonly explorerService: IExplorerService
 	) {
 		// noop
@@ -87,7 +114,7 @@ class BookmarksRenderer implements ITreeRenderer<Bookmark, FuzzyScore, IBookmark
 
 	renderElement(element: ITreeNode<Bookmark, FuzzyScore>, index: number, templateData: IBookmarkTemplateData, height: number | undefined): void {
 		templateData.elementDisposable.dispose();
-		templateData.elementDisposable = this.renderBookmark(element.element, templateData);
+		templateData.elementDisposable = this.renderBookmark(element.element, templateData, element.filterData);
 	}
 
 	get templateId() {
@@ -95,47 +122,29 @@ class BookmarksRenderer implements ITreeRenderer<Bookmark, FuzzyScore, IBookmark
 	}
 
 	renderTemplate(container: HTMLElement): IBookmarkTemplateData {
-		return { bookmarkContainer: container, elementDisposable: Disposable.None };
+		const label = this.labels.create(container, { supportHighlights: true });
+		return { bookmarkContainer: container, label: label, elementDisposable: Disposable.None };
 	}
 
 	disposeTemplate(templateData: IBookmarkTemplateData): void {
 		templateData.elementDisposable.dispose();
+		templateData.label.dispose();
 	}
 
 	disposeElement(element: ITreeNode<Bookmark, FuzzyScore>, index: number, templateData: IBookmarkTemplateData, height: number | undefined): void {
 		templateData.elementDisposable.dispose();
 	}
 
-	private renderBookmark(bookmark: Bookmark, templateData: IBookmarkTemplateData): IDisposable {
-		const bookmarkElement = DOM.append(templateData.bookmarkContainer, document.createElement('div'));
-		bookmarkElement.id = this.bookmarkType === BookmarkType.WORKSPACE ? 'workspaceBookmarkView_' + bookmark.resource.toString() : 'globalBookmarkView_' + bookmark.resource.toString();
-
-		const focusIcon = DOM.append(bookmarkElement, document.createElement('img'));
-		focusIcon.className = 'scope-tree-focus-icon-near-bookmark';
-
-		focusIcon.addEventListener('click', () => {
-			this.explorerService.setRoot(bookmark.resource);
+	private renderBookmark(bookmark: Bookmark, templateData: IBookmarkTemplateData, filterData: FuzzyScore | undefined): IDisposable {
+		templateData.label.setResource({
+			resource: bookmark.resource,
+			name: bookmark.getName(),
+			description: bookmark.getParent()
+		}, {
+			matches: createMatches(filterData)
 		});
 
-		bookmarkElement.addEventListener('mouseover', () => {
-			focusIcon.style.visibility = 'visible';
-		});
-
-		bookmarkElement.addEventListener('mouseout', () => {
-			focusIcon.style.visibility = 'hidden';
-		});
-		bookmarkElement.addEventListener('dblclick', async () => {
-			await this.explorerService.select(bookmark.resource, true);	// Should also expand directory
-		});
-
-		const name = DOM.append(bookmarkElement, document.createElement('span'));
-		name.textContent = bookmark.getName();
-
-		const path = DOM.append(bookmarkElement, document.createElement('span'));
-		path.className = 'bookmark-path';
-		path.textContent = bookmark.getParent();
-
-		return new BookmarkDisposable(focusIcon, name, path, bookmarkElement);
+		return new BookmarkDisposable(templateData.label.element, bookmark.resource, this.explorerService);
 	}
 }
 
@@ -143,7 +152,7 @@ export class BookmarksView extends ViewPane {
 	static readonly ID: string = 'workbench.explorer.displayBookmarksView';
 	static readonly NAME = 'Bookmarks';
 
-
+	private labels!: ResourceLabels;
 	private globalBookmarksTree!: WorkbenchObjectTree<Bookmark, FuzzyScore>;
 	private workspaceBookmarksTree!: WorkbenchObjectTree<Bookmark, FuzzyScore>;
 
@@ -170,6 +179,7 @@ export class BookmarksView extends ViewPane {
 	protected renderBody(container: HTMLElement): void {
 		super.renderBody(container);
 
+		this.labels = this.instantiationService.createInstance(ResourceLabels, { onDidChangeVisibility: this.onDidChangeBodyVisibility });
 		this.renderGlobalBookmarks(container);
 		this.renderWorkspaceBookmarks(container);
 
@@ -190,7 +200,7 @@ export class BookmarksView extends ViewPane {
 			'BookmarksPane' + (scope === BookmarkType.GLOBAL ? 'Global' : 'Workspace'),
 			container,
 			new BookmarksDelegate(),
-			[new BookmarksRenderer(scope, this.explorerService)],
+			[new BookmarksRenderer(this.labels, this.explorerService)],
 			{
 				accessibilityProvider: {
 					getAriaLabel(element: Bookmark): string {
