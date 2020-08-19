@@ -4,29 +4,16 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { ICommandHandler } from 'vs/platform/commands/common/commands';
-import { IBookmarksManager, BookmarkType } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
+import { IBookmarksManager, BookmarkType, bookmarkClass } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
 import { MenuRegistry, MenuId } from 'vs/platform/actions/common/actions';
 import { KeybindingsRegistry, KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
 import { Bookmark } from 'vs/workbench/contrib/scopeTree/browser/bookmarksView';
 import { IExplorerService } from 'vs/workbench/contrib/files/common/files';
+import { URI } from 'vs/base/common/uri';
+import { ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 
 // Handlers implementations for context menu actions
-const removeBookmarkHandler: ICommandHandler = (accessor, element: Bookmark) => {
-	const bookmarksManager = accessor.get(IBookmarksManager);
-	bookmarksManager.addBookmark(element.resource, BookmarkType.NONE);
-};
-
-const toggleToGlobalBookmarkHandler: ICommandHandler = (accessor, element: Bookmark) => {
-	const bookmarksManager = accessor.get(IBookmarksManager);
-	bookmarksManager.addBookmark(element.resource, BookmarkType.GLOBAL);
-};
-
-const toggleToWorkspaceBookmarkHandler: ICommandHandler = (accessor, element: Bookmark) => {
-	const bookmarksManager = accessor.get(IBookmarksManager);
-	bookmarksManager.addBookmark(element.resource, BookmarkType.WORKSPACE);
-};
-
-const setBookmarkAsRoot: ICommandHandler = (accessor, element: Bookmark) => {
+const focusFileExplorer: ICommandHandler = (accessor, element: Bookmark) => {
 	const explorerService = accessor.get(IExplorerService);
 	explorerService.setRoot(element.resource);
 };
@@ -41,6 +28,20 @@ const sortBookmarksByDate: ICommandHandler = (accessor) => {
 
 const displayBookmarkInFileTree: ICommandHandler = (accessor) => {
 	console.log('Displaying directory in file tree from bookmarks panel is not implemented');
+};
+
+const toggleIconIfVisible = (resource: URI, scope: BookmarkType) => {
+	const bookmarkIcon = document.getElementById('bookmarkIconContainer_' + resource.toString());
+	if (bookmarkIcon) {
+		bookmarkIcon.className = bookmarkClass(scope);
+	}
+};
+
+const handleBookmarksChange = (accessor: ServicesAccessor, element: Bookmark, newScope: BookmarkType) => {
+	const bookmarksManager = accessor.get(IBookmarksManager);
+	const resource = element.resource;
+	bookmarksManager.addBookmark(resource, newScope);
+	toggleIconIfVisible(resource, newScope);
 };
 
 // Workspace panel context menu
@@ -157,25 +158,31 @@ MenuRegistry.appendMenuItem(MenuId.DisplayGlobalBookmarksContext, {
 KeybindingsRegistry.registerCommandAndKeybindingRule({
 	id: 'removeBookmark',
 	weight: KeybindingWeight.WorkbenchContrib,
-	handler: removeBookmarkHandler
+	handler: (accessor, element: Bookmark) => {
+		handleBookmarksChange(accessor, element, BookmarkType.NONE);
+	}
 });
 
 KeybindingsRegistry.registerCommandAndKeybindingRule({
 	id: 'toggleBookmarkToGlobal',
 	weight: KeybindingWeight.WorkbenchContrib,
-	handler: toggleToGlobalBookmarkHandler
+	handler: (accessor, element: Bookmark) => {
+		handleBookmarksChange(accessor, element, BookmarkType.GLOBAL);
+	}
 });
 
 KeybindingsRegistry.registerCommandAndKeybindingRule({
 	id: 'toggleBookmarkToWorkspace',
 	weight: KeybindingWeight.WorkbenchContrib,
-	handler: toggleToWorkspaceBookmarkHandler
+	handler: (accessor, element: Bookmark) => {
+		handleBookmarksChange(accessor, element, BookmarkType.WORKSPACE);
+	}
 });
 
 KeybindingsRegistry.registerCommandAndKeybindingRule({
 	id: 'setBookmarkAsRoot',
 	weight: KeybindingWeight.WorkbenchContrib,
-	handler: setBookmarkAsRoot
+	handler: focusFileExplorer
 });
 
 KeybindingsRegistry.registerCommandAndKeybindingRule({
