@@ -8,6 +8,7 @@ import { Event } from 'vs/base/common/event';
 import { URI } from 'vs/base/common/uri';
 
 export interface IBookmarksManager {
+	readonly _serviceBrand: undefined;
 	readonly globalBookmarks: Set<string>;
 	readonly workspaceBookmarks: Set<string>;
 
@@ -15,7 +16,7 @@ export interface IBookmarksManager {
 	getBookmarkType(resource: URI): BookmarkType;
 	toggleBookmarkType(resource: URI): BookmarkType;
 
-	onAddedBookmark: Event<{ uri: URI, bookmarkType: BookmarkType }>;
+	onAddedBookmark: Event<{ uri: URI, bookmarkType: BookmarkType, prevBookmarkType: BookmarkType }>;
 }
 
 export const IBookmarksManager = createDecorator<IBookmarksManager>('bookmarksManager');

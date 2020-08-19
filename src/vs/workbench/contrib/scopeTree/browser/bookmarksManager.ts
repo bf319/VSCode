@@ -9,16 +9,15 @@ import { IBookmarksManager, BookmarkType } from 'vs/workbench/contrib/scopeTree/
 import { Emitter } from 'vs/base/common/event';
 
 export class BookmarksManager implements IBookmarksManager {
+	declare readonly _serviceBrand: undefined;
+
 	static readonly WORKSPACE_BOOKMARKS_STORAGE_KEY: string = 'workbench.explorer.bookmarksWorkspace';
 	static readonly GLOBAL_BOOKMARKS_STORAGE_KEY: string = 'workbench.explorer.bookmarksGlobal';
-
-	// Yellow bookmark = workspace
-	// Red bookmark = global
 
 	globalBookmarks: Set<string> = new Set();
 	workspaceBookmarks: Set<string> = new Set();
 
-	private _onAddedBookmark = new Emitter<{ uri: URI, bookmarkType: BookmarkType }>();
+	private _onAddedBookmark = new Emitter<{ uri: URI, bookmarkType: BookmarkType, prevBookmarkType: BookmarkType }>();
 	public onAddedBookmark = this._onAddedBookmark.event;
 
 	constructor(
@@ -29,33 +28,42 @@ export class BookmarksManager implements IBookmarksManager {
 
 	public addBookmark(resource: URI, scope: BookmarkType): void {
 		const resourceAsString = resource.toString();
+		let prevScope = BookmarkType.NONE;	// Undefined if bookmark was already of the appropriate type
 
 		if (scope === BookmarkType.GLOBAL) {
 			if (!this.globalBookmarks.has(resourceAsString)) {
 				this.globalBookmarks.add(resourceAsString);
 				this.saveGlobalBookmarks();
+			} else {
+				prevScope = BookmarkType.GLOBAL;
 			}
 			if (this.workspaceBookmarks.delete(resourceAsString)) {
 				this.saveWorkspaceBookmarks();
+				prevScope = BookmarkType.WORKSPACE;
 			}
 		} else if (scope === BookmarkType.WORKSPACE) {
 			if (!this.workspaceBookmarks.has(resourceAsString)) {
 				this.workspaceBookmarks.add(resourceAsString);
 				this.saveWorkspaceBookmarks();
+			} else {
+				prevScope = BookmarkType.WORKSPACE;
 			}
 			if (this.globalBookmarks.delete(resourceAsString)) {
 				this.saveGlobalBookmarks();
+				prevScope = BookmarkType.GLOBAL;
 			}
 		} else {
 			if (this.globalBookmarks.delete(resourceAsString)) {
 				this.saveGlobalBookmarks();
+				prevScope = BookmarkType.GLOBAL;
 			}
 			if (this.workspaceBookmarks.delete(resourceAsString)) {
 				this.saveWorkspaceBookmarks();
+				prevScope = BookmarkType.WORKSPACE;
 			}
 		}
 
-		this._onAddedBookmark.fire({ uri: resource, bookmarkType: scope });
+		this._onAddedBookmark.fire({ uri: resource, bookmarkType: scope, prevBookmarkType: prevScope });
 	}
 
 	public getBookmarkType(resource: URI): BookmarkType {
