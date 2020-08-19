@@ -13,7 +13,7 @@ import { URI } from 'vs/base/common/uri';
 import { ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 
 // Handlers implementations for context menu actions
-const focusFileExplorer: ICommandHandler = (accessor, element: Bookmark) => {
+const changeFileExplorerRoot: ICommandHandler = (accessor, element: Bookmark) => {
 	const explorerService = accessor.get(IExplorerService);
 	explorerService.setRoot(element.resource);
 };
@@ -182,7 +182,7 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 KeybindingsRegistry.registerCommandAndKeybindingRule({
 	id: 'setBookmarkAsRoot',
 	weight: KeybindingWeight.WorkbenchContrib,
-	handler: focusFileExplorer
+	handler: changeFileExplorerRoot
 });
 
 KeybindingsRegistry.registerCommandAndKeybindingRule({
