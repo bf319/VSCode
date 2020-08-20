@@ -18,7 +18,7 @@ import { getMultiSelectedResources } from 'vs/workbench/contrib/files/browser/fi
 import { AbstractTree } from 'vs/base/browser/ui/tree/abstractTree';
 
 // Handlers implementations for context menu actions
-const changeFileExplorerRoot: ICommandHandler = (accessor, element: Bookmark) => {
+const changeFileExplorerRoot: ICommandHandler = (accessor: ServicesAccessor, element: Bookmark) => {
 	const explorerService = accessor.get(IExplorerService);
 	const listService = accessor.get(IListService);
 	const editorService = accessor.get(IEditorService);
@@ -40,7 +40,6 @@ const changeFileExplorerRoot: ICommandHandler = (accessor, element: Bookmark) =>
 				if (resource) {
 					explorerService.setRoot(resource);
 				}
-
 				return;
 			}
 
@@ -54,15 +53,15 @@ const changeFileExplorerRoot: ICommandHandler = (accessor, element: Bookmark) =>
 	}
 };
 
-const sortBookmarksByName: ICommandHandler = (accessor) => {
+const sortBookmarksByName: ICommandHandler = (accessor: ServicesAccessor) => {
 	console.log('Sorting by name is not implemented');
 };
 
-const sortBookmarksByDate: ICommandHandler = (accessor) => {
+const sortBookmarksByDate: ICommandHandler = (accessor: ServicesAccessor) => {
 	console.log('Sorting by date is not implemented');
 };
 
-const displayBookmarkInFileTree: ICommandHandler = (accessor) => {
+const displayBookmarkInFileTree: ICommandHandler = (accessor: ServicesAccessor) => {
 	console.log('Displaying directory in file tree from bookmarks panel is not implemented');
 };
 
@@ -139,7 +138,7 @@ MenuRegistry.appendMenuItem(MenuId.DisplayBookmarksContext, {
 KeybindingsRegistry.registerCommandAndKeybindingRule({
 	id: 'removeBookmark',
 	weight: KeybindingWeight.WorkbenchContrib,
-	handler: (accessor, element: Bookmark | BookmarkHeader) => {
+	handler: (accessor: ServicesAccessor, element: Bookmark | BookmarkHeader) => {
 		if (element && element instanceof Bookmark) {
 			handleBookmarksChange(accessor, element, BookmarkType.NONE);
 		}
@@ -149,7 +148,7 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 KeybindingsRegistry.registerCommandAndKeybindingRule({
 	id: 'toggleBookmarkType',
 	weight: KeybindingWeight.WorkbenchContrib,
-	handler: (accessor, element: Bookmark | BookmarkHeader) => {
+	handler: (accessor: ServicesAccessor, element: Bookmark | BookmarkHeader) => {
 		if (element && element instanceof Bookmark) {
 			const currentBookmarkType = accessor.get(IBookmarksManager).getBookmarkType(element.resource);
 			const toggledBookmarkType = currentBookmarkType === BookmarkType.WORKSPACE ? BookmarkType.GLOBAL : BookmarkType.WORKSPACE;
