@@ -20,13 +20,13 @@ export class BreadcrumbObserver implements IBreadcrumbObserver {
 
 	registerTreeListeners(tree: Tree<any, any>): void {
 		tree.onMouseOver(e => {
-			const element = e.element;
+			const element = e.element as IFileStat;
 			if (element) {
-				const icon = document.getElementById('breadcrumbFocusIconContainer_' + (element as IFileStat).resource.toString());
+				const icon = document.getElementById('breadcrumbFocusIconContainer_' + element.resource.toString());
 				if (icon) {
 					icon.style.visibility = 'visible';
 					icon.onclick = () => {
-						let resource = (element as IFileStat).resource;
+						const resource = element.resource;
 						this.explorerService.setRoot(resource);
 					};
 				}
@@ -34,9 +34,9 @@ export class BreadcrumbObserver implements IBreadcrumbObserver {
 		});
 
 		tree.onMouseOut(e => {
-			const element = e.element;
+			const element = e.element as IFileStat;
 			if (element) {
-				const icon = document.getElementById('breadcrumbFocusIconContainer_' + (element as IFileStat).resource.toString());
+				const icon = document.getElementById('breadcrumbFocusIconContainer_' + element.resource.toString());
 				if (icon) {
 					icon.style.visibility = 'hidden';
 				}
