@@ -7,15 +7,51 @@ import { ICommandHandler } from 'vs/platform/commands/common/commands';
 import { IBookmarksManager, BookmarkType, bookmarkClass } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
 import { MenuRegistry, MenuId } from 'vs/platform/actions/common/actions';
 import { KeybindingsRegistry, KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
-import { Bookmark } from 'vs/workbench/contrib/scopeTree/browser/bookmarksView';
+import { Bookmark, BookmarkHeader } from 'vs/workbench/contrib/scopeTree/browser/bookmarksView';
 import { IExplorerService } from 'vs/workbench/contrib/files/common/files';
 import { URI } from 'vs/base/common/uri';
 import { ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
+import { KeyMod, KeyCode } from 'vs/base/common/keyCodes';
+import { IListService } from 'vs/platform/list/browser/listService';
+import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
+import { getMultiSelectedResources } from 'vs/workbench/contrib/files/browser/files';
+import { AbstractTree } from 'vs/base/browser/ui/tree/abstractTree';
 
 // Handlers implementations for context menu actions
 const changeFileExplorerRoot: ICommandHandler = (accessor, element: Bookmark) => {
 	const explorerService = accessor.get(IExplorerService);
-	explorerService.setRoot(element.resource);
+	const listService = accessor.get(IListService);
+	const editorService = accessor.get(IEditorService);
+
+	if (element && element instanceof BookmarkHeader) {
+		return;
+	}
+
+	// Input received from opening the context menu
+	if (element && element.resource) {
+		explorerService.setRoot(element.resource);
+	} else {
+		const lastFocusedList = listService.lastFocusedList;
+		if (lastFocusedList && lastFocusedList?.getHTMLElement() === document.activeElement) {
+			// Selection in bookmarks panel (don't allow multiple selection)
+			const currentFocus = lastFocusedList.getFocus();
+			if (lastFocusedList instanceof AbstractTree && currentFocus.every(item => item instanceof Bookmark)) {
+				const resource = currentFocus.length === 1 ? (currentFocus[0] as Bookmark).resource : undefined;
+				if (resource) {
+					explorerService.setRoot(resource);
+				}
+
+				return;
+			}
+
+			// Selection in explorer (don't allow multiple selection)
+			const resources = getMultiSelectedResources(undefined, listService, editorService, explorerService);
+			const resource = resources && resources.length === 1 ? resources[0] : undefined;
+			if (resource) {
+				explorerService.setRoot(resource);
+			}
+		}
+	}
 };
 
 const sortBookmarksByName: ICommandHandler = (accessor) => {
@@ -44,8 +80,8 @@ const handleBookmarksChange = (accessor: ServicesAccessor, element: Bookmark, ne
 	toggleIconIfVisible(resource, newScope);
 };
 
-// Workspace panel context menu
-MenuRegistry.appendMenuItem(MenuId.DisplayWorkspaceBookmarksContext, {
+// Bookmarks panel context menu
+MenuRegistry.appendMenuItem(MenuId.DisplayBookmarksContext, {
 	group: '1_bookmarks_sort',
 	order: 10,
 	command: {
@@ -54,7 +90,7 @@ MenuRegistry.appendMenuItem(MenuId.DisplayWorkspaceBookmarksContext, {
 	}
 });
 
-MenuRegistry.appendMenuItem(MenuId.DisplayWorkspaceBookmarksContext, {
+MenuRegistry.appendMenuItem(MenuId.DisplayBookmarksContext, {
 	group: '1_bookmarks_sort',
 	order: 20,
 	command: {
@@ -63,7 +99,7 @@ MenuRegistry.appendMenuItem(MenuId.DisplayWorkspaceBookmarksContext, {
 	}
 });
 
-MenuRegistry.appendMenuItem(MenuId.DisplayWorkspaceBookmarksContext, {
+MenuRegistry.appendMenuItem(MenuId.DisplayBookmarksContext, {
 	group: '2_bookmarks_file_tree_actions',
 	order: 10,
 	command: {
@@ -72,7 +108,7 @@ MenuRegistry.appendMenuItem(MenuId.DisplayWorkspaceBookmarksContext, {
 	}
 });
 
-MenuRegistry.appendMenuItem(MenuId.DisplayWorkspaceBookmarksContext, {
+MenuRegistry.appendMenuItem(MenuId.DisplayBookmarksContext, {
 	group: '2_bookmarks_file_tree_actions',
 	order: 20,
 	command: {
@@ -81,7 +117,7 @@ MenuRegistry.appendMenuItem(MenuId.DisplayWorkspaceBookmarksContext, {
 	}
 });
 
-MenuRegistry.appendMenuItem(MenuId.DisplayWorkspaceBookmarksContext, {
+MenuRegistry.appendMenuItem(MenuId.DisplayBookmarksContext, {
 	group: '3_bookmarks_toggle',
 	order: 10,
 	command: {
@@ -90,67 +126,12 @@ MenuRegistry.appendMenuItem(MenuId.DisplayWorkspaceBookmarksContext, {
 	}
 });
 
-MenuRegistry.appendMenuItem(MenuId.DisplayWorkspaceBookmarksContext, {
+MenuRegistry.appendMenuItem(MenuId.DisplayBookmarksContext, {
 	group: '3_bookmarks_toggle',
 	order: 20,
 	command: {
-		id: 'toggleBookmarkToGlobal',
-		title: 'Change to global bookmark'
-	}
-});
-
-// Global panel context menu
-MenuRegistry.appendMenuItem(MenuId.DisplayGlobalBookmarksContext, {
-	group: '1_bookmarks_sort',
-	order: 10,
-	command: {
-		id: 'sortBookmarksByName',
-		title: 'Sort by: Name'
-	}
-});
-
-MenuRegistry.appendMenuItem(MenuId.DisplayGlobalBookmarksContext, {
-	group: '1_bookmarks_sort',
-	order: 20,
-	command: {
-		id: 'sortBookmarksByDate',
-		title: 'Sort by: Date added'
-	}
-});
-
-MenuRegistry.appendMenuItem(MenuId.DisplayGlobalBookmarksContext, {
-	group: '2_bookmarks_file_tree_actions',
-	order: 10,
-	command: {
-		id: 'setBookmarkAsRoot',
-		title: 'Set as root'
-	}
-});
-
-MenuRegistry.appendMenuItem(MenuId.DisplayGlobalBookmarksContext, {
-	group: '2_bookmarks_file_tree_actions',
-	order: 20,
-	command: {
-		id: 'displayBookmarkInFileTree',
-		title: 'Show in file tree'
-	}
-});
-
-MenuRegistry.appendMenuItem(MenuId.DisplayGlobalBookmarksContext, {
-	group: '3_bookmarks_toggle',
-	order: 10,
-	command: {
-		id: 'removeBookmark',
-		title: 'Remove bookmark'
-	}
-});
-
-MenuRegistry.appendMenuItem(MenuId.DisplayGlobalBookmarksContext, {
-	group: '3_bookmarks_toggle',
-	order: 20,
-	command: {
-		id: 'toggleBookmarkToWorkspace',
-		title: 'Change to workspace bookmark'
+		id: 'toggleBookmarkType',
+		title: 'Toggle bookmark type'
 	}
 });
 
@@ -158,30 +139,29 @@ MenuRegistry.appendMenuItem(MenuId.DisplayGlobalBookmarksContext, {
 KeybindingsRegistry.registerCommandAndKeybindingRule({
 	id: 'removeBookmark',
 	weight: KeybindingWeight.WorkbenchContrib,
-	handler: (accessor, element: Bookmark) => {
-		handleBookmarksChange(accessor, element, BookmarkType.NONE);
+	handler: (accessor, element: Bookmark | BookmarkHeader) => {
+		if (element && element instanceof Bookmark) {
+			handleBookmarksChange(accessor, element, BookmarkType.NONE);
+		}
 	}
 });
 
 KeybindingsRegistry.registerCommandAndKeybindingRule({
-	id: 'toggleBookmarkToGlobal',
+	id: 'toggleBookmarkType',
 	weight: KeybindingWeight.WorkbenchContrib,
-	handler: (accessor, element: Bookmark) => {
-		handleBookmarksChange(accessor, element, BookmarkType.GLOBAL);
-	}
-});
-
-KeybindingsRegistry.registerCommandAndKeybindingRule({
-	id: 'toggleBookmarkToWorkspace',
-	weight: KeybindingWeight.WorkbenchContrib,
-	handler: (accessor, element: Bookmark) => {
-		handleBookmarksChange(accessor, element, BookmarkType.WORKSPACE);
+	handler: (accessor, element: Bookmark | BookmarkHeader) => {
+		if (element && element instanceof Bookmark) {
+			const currentBookmarkType = accessor.get(IBookmarksManager).getBookmarkType(element.resource);
+			const toggledBookmarkType = currentBookmarkType === BookmarkType.WORKSPACE ? BookmarkType.GLOBAL : BookmarkType.WORKSPACE;
+			handleBookmarksChange(accessor, element, toggledBookmarkType);
+		}
 	}
 });
 
 KeybindingsRegistry.registerCommandAndKeybindingRule({
 	id: 'setBookmarkAsRoot',
 	weight: KeybindingWeight.WorkbenchContrib,
+	primary: KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KEY_R,
 	handler: changeFileExplorerRoot
 });
 

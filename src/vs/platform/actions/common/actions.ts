@@ -126,8 +126,7 @@ export class MenuId {
 	static readonly TimelineTitle = new MenuId('TimelineTitle');
 	static readonly TimelineTitleContext = new MenuId('TimelineTitleContext');
 	static readonly AccountsContext = new MenuId('AccountsContext');
-	static readonly DisplayWorkspaceBookmarksContext = new MenuId('DisplayWorkspaceBookmarksContext');
-	static readonly DisplayGlobalBookmarksContext = new MenuId('DisplayGlobalBookmarksContext');
+	static readonly DisplayBookmarksContext = new MenuId('DisplayBookmarksContext');
 
 	readonly id: number;
 	readonly _debugName: string;
