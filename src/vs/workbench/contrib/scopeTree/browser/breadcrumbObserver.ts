@@ -25,10 +25,6 @@ export class BreadcrumbObserver implements IBreadcrumbObserver {
 				const icon = document.getElementById('breadcrumbFocusIconContainer_' + element.resource.toString());
 				if (icon) {
 					icon.style.visibility = 'visible';
-					icon.onclick = () => {
-						const resource = element.resource;
-						this.explorerService.setRoot(resource);
-					};
 				}
 			}
 		});
@@ -50,6 +46,9 @@ export class BreadcrumbObserver implements IBreadcrumbObserver {
 		const iconContainer = document.createElement('img');
 		iconContainer.className = 'scope-tree-focus-icon';
 		iconContainer.id = 'breadcrumbFocusIconContainer_' + resource.toString();
+		iconContainer.onclick = () => {
+			this.explorerService.setRoot(resource);
+		};
 
 		const previousIcon = templateData.element.lastChild;
 		if (previousIcon && (<HTMLElement>previousIcon).className === 'scope-tree-focus-icon') {
