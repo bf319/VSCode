@@ -140,9 +140,7 @@ export class ExplorerService implements IExplorerService {
 	}
 
 	setRoot(resource: URI): void {
-		this.model.setRoot(resource, this.sortOrder).then(async () => {
-			await this.view?.setTreeInput();
-		});
+		this.model.setRoot(resource, this.sortOrder);
 	}
 
 	getEditable(): { stat: ExplorerItem, data: IEditableData } | undefined {

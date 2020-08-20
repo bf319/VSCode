@@ -50,6 +50,7 @@ export class ExplorerModel implements IDisposable {
 		});
 
 		this._roots = [root];
+		this._onDidChangeRoots.fire();
 	}
 
 	/**
