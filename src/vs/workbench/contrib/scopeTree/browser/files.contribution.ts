@@ -42,6 +42,8 @@ import { DirtyFilesIndicator } from 'vs/workbench/contrib/files/common/dirtyFile
 import { extUri } from 'vs/base/common/resources';
 import { BookmarksManager } from 'vs/workbench/contrib/scopeTree/browser/bookmarksManager';
 import { IBookmarksManager } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
+import { BreadcrumbObserver } from 'vs/workbench/contrib/scopeTree/browser/breadcrumbObserver';
+import { IBreadcrumbObserver } from 'vs/workbench/browser/parts/editor/breadcrumbObserver';
 
 // Viewlet Action
 export class OpenExplorerViewletAction extends ShowViewletAction {
@@ -78,6 +80,7 @@ class FileUriLabelContribution implements IWorkbenchContribution {
 
 registerSingleton(IExplorerService, ExplorerService, true);
 registerSingleton(IBookmarksManager, BookmarksManager, true);
+registerSingleton(IBreadcrumbObserver, BreadcrumbObserver, true);
 
 const openViewletKb: IKeybindings = {
 	primary: KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KEY_E
