@@ -8,10 +8,12 @@
 	white-space: nowrap;
 	position: relative;
 	left: -20px;
+	top: -10px;
 }
 
 .breadcrumb-background {
 	background-color: #eee;
+	height: 30px;
 }
 
 .breadcrumb-element {
