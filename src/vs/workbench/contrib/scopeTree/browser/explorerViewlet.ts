@@ -40,6 +40,7 @@ import { AddRootFolderAction, OpenFolderAction, OpenFileFolderAction } from 'vs/
 import { isMacintosh } from 'vs/base/common/platform';
 import { Codicon } from 'vs/base/common/codicons';
 import { BookmarksView } from 'vs/workbench/contrib/scopeTree/browser/bookmarksView';
+import { RecentDirectoriesView } from 'vs/workbench/contrib/scopeTree/browser/recentDirectoriesView';
 
 export class ExplorerViewletViewsContribution extends Disposable implements IWorkbenchContribution {
 
@@ -79,6 +80,11 @@ export class ExplorerViewletViewsContribution extends Disposable implements IWor
 		const bookmarksDescriptor = this.createBookmarksViewDescriptor();
 		if (!viewDescriptors.some(v => v.id === bookmarksDescriptor.id)) {
 			viewDescriptorsToRegister.push(bookmarksDescriptor);
+		}
+
+		const recentDirectoriesDescriptor = this.createRecentDirectoriesDescriptor();
+		if (!viewDescriptors.some(v => v.id === recentDirectoriesDescriptor.id)) {
+			viewDescriptorsToRegister.push(recentDirectoriesDescriptor);
 		}
 
 		const explorerViewDescriptor = this.createExplorerViewDescriptor();
@@ -164,6 +170,16 @@ export class ExplorerViewletViewsContribution extends Disposable implements IWor
 			ctorDescriptor: new SyncDescriptor(BookmarksView),
 			order: 2,
 			canToggleVisibility: true,
+		};
+	}
+
+	private createRecentDirectoriesDescriptor(): IViewDescriptor {
+		return {
+			id: RecentDirectoriesView.ID,
+			name: RecentDirectoriesView.NAME,
+			ctorDescriptor: new SyncDescriptor(RecentDirectoriesView),
+			order: 3,
+			canToggleVisibility: true
 		};
 	}
 
