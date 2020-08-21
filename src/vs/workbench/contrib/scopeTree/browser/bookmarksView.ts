@@ -22,11 +22,14 @@ import { dirname, basename } from 'vs/base/common/resources';
 import { IExplorerService } from 'vs/workbench/contrib/files/common/files';
 import { IListVirtualDelegate, IKeyboardNavigationLabelProvider } from 'vs/base/browser/ui/list/list';
 import { ScrollbarVisibility } from 'vs/base/common/scrollable';
-import { IDisposable, Disposable } from 'vs/base/common/lifecycle';
+import { IDisposable, Disposable, DisposableStore } from 'vs/base/common/lifecycle';
 import { WorkbenchObjectTree } from 'vs/platform/list/browser/listService';
 import { FuzzyScore, createMatches } from 'vs/base/common/filters';
-import { ITreeRenderer, ITreeNode, ITreeElement } from 'vs/base/browser/ui/tree/tree';
+import { ITreeRenderer, ITreeNode, ITreeElement, ITreeContextMenuEvent } from 'vs/base/browser/ui/tree/tree';
 import { IResourceLabel, ResourceLabels } from 'vs/workbench/browser/labels';
+import { IAction } from 'vs/base/common/actions';
+import { createAndFillInContextMenuActions } from 'vs/platform/actions/browser/menuEntryActionViewItem';
+import { IMenu, IMenuService, MenuId } from 'vs/platform/actions/common/actions';
 
 export class Bookmark {
 	private _resource: URI;
@@ -251,6 +254,8 @@ export class BookmarksView extends ViewPane {
 	private globalBookmarks: ITreeElement<Bookmark>[] = [];
 	private workspaceBookmarks: ITreeElement<Bookmark>[] = [];
 
+	private contributedContextMenu!: IMenu;
+
 	constructor(
 		options: IViewletViewOptions,
 		@IThemeService themeService: IThemeService,
@@ -264,6 +269,7 @@ export class BookmarksView extends ViewPane {
 		@ITelemetryService telemetryService: ITelemetryService,
 		@IBookmarksManager private readonly bookmarksManager: IBookmarksManager,
 		@IExplorerService private readonly explorerService: IExplorerService,
+		@IMenuService private readonly menuService: IMenuService,
 	) {
 		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
 
@@ -298,6 +304,9 @@ export class BookmarksView extends ViewPane {
 				this.toggleHeader(e.element);
 			}
 		}));
+
+		this.contributedContextMenu = this.menuService.createMenu(MenuId.DisplayBookmarksContext, this.tree.contextKeyService);
+		this.tree.onContextMenu(e => this.onContextMenu(e));
 	}
 
 	protected layoutBody(height: number, width: number): void {
@@ -328,6 +337,29 @@ export class BookmarksView extends ViewPane {
 				verticalScrollMode: ScrollbarVisibility.Auto,
 				keyboardNavigationLabelProvider: new BookmarkKeyboardNavigationLabelProvider()
 			});
+	}
+
+	private onContextMenu(e: ITreeContextMenuEvent<Bookmark | BookmarkHeader | null>): void {
+		if (!e.element) {
+			return;
+		}
+
+		const element = e.element;
+		const actions: IAction[] = [];
+		const disposables = new DisposableStore();
+		disposables.add(createAndFillInContextMenuActions(this.contributedContextMenu, { shouldForwardArgs: true }, actions, this.contextMenuService));
+
+		this.contextMenuService.showContextMenu({
+			getAnchor: () => e.anchor,
+			getActions: () => actions,
+			onHide: (wasCancelled?: boolean) => {
+				if (wasCancelled) {
+					this.tree.domFocus();
+				}
+				disposables.dispose();
+			},
+			getActionsContext: () => element
+		});
 	}
 
 	private sortBookmarkByName(bookmarks: Set<string>) {
