@@ -9,6 +9,8 @@
 	position: relative;
 	left: -20px;
 	top: -10px;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .breadcrumb-background {
