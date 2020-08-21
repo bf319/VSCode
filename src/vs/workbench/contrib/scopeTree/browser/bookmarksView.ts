@@ -49,25 +49,9 @@ export class Bookmark {
 }
 
 export class BookmarkHeader {
-	private _scope: BookmarkType;
-	private _visibility: boolean;
+	expanded: boolean = true;
 
-	constructor(scope: BookmarkType) {
-		this._scope = scope;
-		this._visibility = true;
-	}
-
-	get scope(): BookmarkType {
-		return this._scope;
-	}
-
-	get visibility(): boolean {
-		return this._visibility;
-	}
-
-	set visibility(show: boolean) {
-		this._visibility = show;
-	}
+	constructor(readonly scope: BookmarkType) { }
 }
 
 class BookmarkDelegate implements IListVirtualDelegate<Bookmark | BookmarkHeader> {
@@ -100,52 +84,53 @@ interface IBookmarkHeaderTemplateData {
 class BookmarkElementIconRenderer implements IDisposable {
 	private _focusIcon!: HTMLElement;
 
-	constructor(container: HTMLElement,
+	constructor(private readonly container: HTMLElement,
 		private readonly stat: URI,
 		@IExplorerService private readonly explorerService: IExplorerService) {
-		this.renderFocusIcon(container);
-		this.addListeners(container);
+		this.renderFocusIcon();
+		this.addListeners();
 	}
 
 	get focusIcon(): HTMLElement {
 		return this._focusIcon;
 	}
 
-	private addListeners(container: HTMLElement): void {
-		container.addEventListener('mouseover', () => {
-			this._focusIcon.style.visibility = 'visible';
-		});
-		container.addEventListener('mouseout', () => {
-			this._focusIcon.style.visibility = 'hidden';
-		});
-		container.addEventListener('dblclick', async () => {
-			await this.explorerService.select(this.stat, true);	// Should also expand directory
-		});
-		this._focusIcon.addEventListener('click', () => {
-			this.explorerService.setRoot(this.stat);
-		});
+	private showIcon = () => {
+		this._focusIcon.style.visibility = 'visible';
+	};
+
+	private hideIcon = () => {
+		this._focusIcon.style.visibility = 'hidden';
+	};
+
+	private select = async () => {
+		await this.explorerService.select(this.stat, true);	// Should also expand directory
+	};
+
+	private setRoot = () => {
+		this.explorerService.setRoot(this.stat);
+	};
+
+	private addListeners(): void {
+		this.container.addEventListener('mouseover', this.showIcon);
+		this.container.addEventListener('mouseout', this.hideIcon);
+		this.container.addEventListener('dblclick', this.select);
+		this._focusIcon.addEventListener('click', this.setRoot);
 	}
 
-	private renderFocusIcon(container: HTMLElement): void {
+	private renderFocusIcon(): void {
 		this._focusIcon = document.createElement('img');
 		this._focusIcon.className = 'scope-tree-focus-icon-near-bookmark';
-		container.insertBefore(this._focusIcon, container.firstChild);
+		this.container.insertBefore(this._focusIcon, this.container.firstChild);
 	}
 
 	dispose(): void {
 		this._focusIcon.remove();
-	}
-}
-
-class BookmarkElementHeaderRenderer implements IDisposable {
-	private headerContainer: HTMLElement;
-
-	constructor(headerContainer: HTMLElement) {
-		this.headerContainer = headerContainer;
-	}
-
-	dispose(): void {
-		this.headerContainer.remove();
+		// Listeners need to be removed because container (templateData.label.element) is not removed from the DOM.
+		this.container.removeEventListener('mouseover', this.showIcon);
+		this.container.removeEventListener('mouseout', this.hideIcon);
+		this.container.removeEventListener('dblclick', this.select);
+		this._focusIcon.removeEventListener('click', this.setRoot);
 	}
 }
 
@@ -155,14 +140,7 @@ class BookmarkRenderer implements ITreeRenderer<Bookmark, FuzzyScore, IBookmarkT
 	constructor(
 		private labels: ResourceLabels,
 		private readonly explorerService: IExplorerService
-	) {
-		// noop
-	}
-
-	renderElement(element: ITreeNode<Bookmark, FuzzyScore>, index: number, templateData: IBookmarkTemplateData, height: number | undefined): void {
-		templateData.elementDisposable.dispose();
-		templateData.elementDisposable = this.renderBookmark(element.element, templateData, element.filterData);
-	}
+	) { }
 
 	get templateId() {
 		return BookmarkRenderer.ID;
@@ -170,7 +148,13 @@ class BookmarkRenderer implements ITreeRenderer<Bookmark, FuzzyScore, IBookmarkT
 
 	renderTemplate(container: HTMLElement): IBookmarkTemplateData {
 		const label = this.labels.create(container, { supportHighlights: true });
-		return { bookmarkContainer: container, label: label, elementDisposable: Disposable.None };
+		const bookmarkContainer = DOM.append(container, document.createElement('div'));
+		return { bookmarkContainer: bookmarkContainer, label: label, elementDisposable: Disposable.None };
+	}
+
+	renderElement(element: ITreeNode<Bookmark, FuzzyScore>, index: number, templateData: IBookmarkTemplateData, height: number | undefined): void {
+		templateData.elementDisposable.dispose();
+		templateData.elementDisposable = this.renderBookmark(element.element, templateData, element.filterData);
 	}
 
 	disposeTemplate(templateData: IBookmarkTemplateData): void {
@@ -225,7 +209,7 @@ class BookmarkHeaderRenderer implements ITreeRenderer<BookmarkHeader, FuzzyScore
 		const expandedTwistie = DOM.$(Codicon.chevronDown.cssSelector);
 		expandedTwistie.style.paddingTop = '2px';
 
-		if (element.visibility) {
+		if (element.expanded) {
 			header.appendChild(expandedTwistie);
 		} else {
 			header.appendChild(collapsedTwistie);
@@ -246,7 +230,11 @@ class BookmarkHeaderRenderer implements ITreeRenderer<BookmarkHeader, FuzzyScore
 			}
 		};
 
-		return new BookmarkElementHeaderRenderer(header);
+		return {
+			dispose(): void {
+				header.remove();
+			}
+		};
 	}
 }
 
@@ -278,13 +266,8 @@ export class BookmarksView extends ViewPane {
 		@IExplorerService private readonly explorerService: IExplorerService,
 	) {
 		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
-	}
-
-	protected renderBody(container: HTMLElement): void {
-		super.renderBody(container);
 
 		this.labels = this.instantiationService.createInstance(ResourceLabels, { onDidChangeVisibility: this.onDidChangeBodyVisibility });
-
 		this._register(this.bookmarksManager.onAddedBookmark(e => {
 			const resource = e.uri;
 			const prevScope = e.prevBookmarkType;
@@ -295,23 +278,16 @@ export class BookmarksView extends ViewPane {
 				this.renderNewBookmark(resource, newScope);
 			}
 		}));
+	}
+
+	protected renderBody(container: HTMLElement): void {
+		super.renderBody(container);
 
 		this.tree = this.createTree(container);
 		this._register(this.tree);
 
-		const globalBookmarks = this.sortBookmarkByName(this.bookmarksManager.globalBookmarks);
-		for (let i = 0; i < globalBookmarks.length; i++) {
-			this.globalBookmarks.push({
-				element: new Bookmark(globalBookmarks[i])
-			});
-		}
-
-		const workspaceBookmarks = this.sortBookmarkByName(this.bookmarksManager.workspaceBookmarks);
-		for (let i = 0; i < workspaceBookmarks.length; i++) {
-			this.workspaceBookmarks.push({
-				element: new Bookmark(workspaceBookmarks[i])
-			});
-		}
+		this.getBookmarksTreeElements(this.bookmarksManager.globalBookmarks, this.globalBookmarks);
+		this.getBookmarksTreeElements(this.bookmarksManager.workspaceBookmarks, this.workspaceBookmarks);
 
 		this.tree.setChildren(null, [{ element: this.globalBookmarksHeader }, { element: this.workspaceBookmarksHeader }]);
 		this.tree.setChildren(this.globalBookmarksHeader, this.globalBookmarks);
@@ -363,10 +339,19 @@ export class BookmarksView extends ViewPane {
 		});
 	}
 
+	private getBookmarksTreeElements(rawBookmarks: Set<string>, treeElements: ITreeElement<Bookmark>[]) {
+		const sortedBookmarks = this.sortBookmarkByName(rawBookmarks);
+		for (let i = 0; i < sortedBookmarks.length; i++) {
+			treeElements.push({
+				element: new Bookmark(sortedBookmarks[i])
+			});
+		}
+	}
+
 	private toggleHeader(header: BookmarkHeader) {
-		header.visibility = !header.visibility;
+		header.expanded = !header.expanded;
 		const headerItem = header.scope === BookmarkType.GLOBAL ? this.globalBookmarksHeader : this.workspaceBookmarksHeader;
-		const children = header.visibility ? (header.scope === BookmarkType.GLOBAL ? this.globalBookmarks : this.workspaceBookmarks) : [];
+		const children = header.expanded ? (header.scope === BookmarkType.GLOBAL ? this.globalBookmarks : this.workspaceBookmarks) : [];
 
 		this.tree.setChildren(headerItem, children);
 	}
@@ -379,24 +364,32 @@ export class BookmarksView extends ViewPane {
 
 		if (scope === BookmarkType.WORKSPACE) {
 			this.workspaceBookmarks.splice(0, 0, { element: new Bookmark(resourceAsString) });
-			this.tree.setChildren(this.workspaceBookmarksHeader, this.workspaceBookmarks);
+			if (this.workspaceBookmarksHeader.expanded) {
+				this.tree.setChildren(this.workspaceBookmarksHeader, this.workspaceBookmarks);
+			}
 		}
 
 		if (scope === BookmarkType.GLOBAL) {
 			this.globalBookmarks.splice(0, 0, { element: new Bookmark(resourceAsString) });
-			this.tree.setChildren(this.globalBookmarksHeader, this.globalBookmarks);
+			if (this.globalBookmarksHeader.expanded) {
+				this.tree.setChildren(this.globalBookmarksHeader, this.globalBookmarks);
+			}
 		}
 	}
 
 	private removeBookmark(resource: URI, prevType: BookmarkType): void {
 		if (prevType === BookmarkType.WORKSPACE) {
 			this.workspaceBookmarks = this.workspaceBookmarks.filter(e => e.element.resource.toString() !== resource.toString());
-			this.tree.setChildren(this.workspaceBookmarksHeader, this.workspaceBookmarks);
+			if (this.workspaceBookmarksHeader.expanded) {
+				this.tree.setChildren(this.workspaceBookmarksHeader, this.workspaceBookmarks);
+			}
 		}
 
 		if (prevType === BookmarkType.GLOBAL) {
 			this.globalBookmarks = this.globalBookmarks.filter(e => e.element.resource.toString() !== resource.toString());
-			this.tree.setChildren(this.globalBookmarksHeader, this.globalBookmarks);
+			if (this.globalBookmarksHeader.expanded) {
+				this.tree.setChildren(this.globalBookmarksHeader, this.globalBookmarks);
+			}
 		}
 	}
 }
