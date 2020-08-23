@@ -344,7 +344,6 @@ export class BookmarksView extends ViewPane {
 			return;
 		}
 
-		const element = e.element;
 		const actions: IAction[] = [];
 		const disposables = new DisposableStore();
 		disposables.add(createAndFillInContextMenuActions(this.contributedContextMenu, { shouldForwardArgs: true }, actions, this.contextMenuService));
@@ -358,7 +357,7 @@ export class BookmarksView extends ViewPane {
 				}
 				disposables.dispose();
 			},
-			getActionsContext: () => element
+			getActionsContext: () => e.element
 		});
 	}
 
