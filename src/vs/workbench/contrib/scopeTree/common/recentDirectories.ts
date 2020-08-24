@@ -9,6 +9,7 @@ import { Event } from 'vs/base/common/event';
 export interface IRecentDirectoriesManager {
 	readonly _serviceBrand: undefined;
 	readonly STORAGE_SIZE: number;
+	recentDirectories: Set<string>;
 
 	onOpenedDirectory: Event<{ openedDir: string, replacedDir: string | undefined }>;
 }
