@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { ICommandHandler } from 'vs/platform/commands/common/commands';
-import { IBookmarksManager, BookmarkType, bookmarkClass } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
+import { IBookmarksManager, BookmarkType, bookmarkClass, SortType } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
 import { MenuRegistry, MenuId } from 'vs/platform/actions/common/actions';
 import { KeybindingsRegistry, KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
 import { Bookmark, BookmarkHeader } from 'vs/workbench/contrib/scopeTree/browser/bookmarksView';
@@ -54,11 +54,11 @@ const changeFileExplorerRoot: ICommandHandler = (accessor: ServicesAccessor, ele
 };
 
 const sortBookmarksByName: ICommandHandler = (accessor: ServicesAccessor) => {
-	console.log('Sorting by name is not implemented');
+	accessor.get(IBookmarksManager).sortBookmarks(SortType.NAME);
 };
 
 const sortBookmarksByDate: ICommandHandler = (accessor: ServicesAccessor) => {
-	console.log('Sorting by date is not implemented');
+	accessor.get(IBookmarksManager).sortBookmarks(SortType.DATE);
 };
 
 const displayBookmarkInFileTree: ICommandHandler = (accessor: ServicesAccessor) => {

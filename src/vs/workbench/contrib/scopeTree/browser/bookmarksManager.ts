@@ -5,7 +5,7 @@
 
 import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
 import { URI } from 'vs/base/common/uri';
-import { IBookmarksManager, BookmarkType } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
+import { IBookmarksManager, BookmarkType, SortType } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
 import { Emitter } from 'vs/base/common/event';
 
 export class BookmarksManager implements IBookmarksManager {
@@ -20,34 +20,40 @@ export class BookmarksManager implements IBookmarksManager {
 	private _onAddedBookmark = new Emitter<{ uri: URI, bookmarkType: BookmarkType, prevBookmarkType: BookmarkType }>();
 	public onAddedBookmark = this._onAddedBookmark.event;
 
+	private _onDidSortBookmark = new Emitter<SortType>();
+	public onDidSortBookmark = this._onDidSortBookmark.event;
+
 	constructor(
 		@IStorageService private readonly storageService: IStorageService
 	) {
 		this.initializeBookmarks();
 	}
 
+	// Preserve sorting by date when bookmarks are added to the sets (most recent is kept at index 0)
 	public addBookmark(resource: URI, scope: BookmarkType): void {
 		const resourceAsString = resource.toString();
-		let prevScope = BookmarkType.NONE;	// Undefined if bookmark was already of the appropriate type
+		let prevScope = BookmarkType.NONE;	// Undefined if bookmark already had the appropriate type
 
 		if (scope === BookmarkType.GLOBAL) {
-			if (!this.globalBookmarks.has(resourceAsString)) {
-				this.globalBookmarks.add(resourceAsString);
-				this.saveGlobalBookmarks();
-			} else {
+			if (this.globalBookmarks.delete(resourceAsString)) {
 				prevScope = BookmarkType.GLOBAL;
 			}
+
+			this.pushIntoSetFront(resourceAsString, scope);
+			this.saveGlobalBookmarks();
+
 			if (this.workspaceBookmarks.delete(resourceAsString)) {
 				this.saveWorkspaceBookmarks();
 				prevScope = BookmarkType.WORKSPACE;
 			}
 		} else if (scope === BookmarkType.WORKSPACE) {
-			if (!this.workspaceBookmarks.has(resourceAsString)) {
-				this.workspaceBookmarks.add(resourceAsString);
-				this.saveWorkspaceBookmarks();
-			} else {
+			if (this.workspaceBookmarks.delete(resourceAsString)) {
 				prevScope = BookmarkType.WORKSPACE;
 			}
+
+			this.pushIntoSetFront(resourceAsString, scope);
+			this.saveWorkspaceBookmarks();
+
 			if (this.globalBookmarks.delete(resourceAsString)) {
 				this.saveGlobalBookmarks();
 				prevScope = BookmarkType.GLOBAL;
@@ -87,6 +93,10 @@ export class BookmarksManager implements IBookmarksManager {
 		return newType;
 	}
 
+	public sortBookmarks(sortType: SortType) {
+		this._onDidSortBookmark.fire(sortType);
+	}
+
 	private initializeBookmarks(): void {
 		// Retrieve bookmarks from storageService
 		this.initializeGlobalBookmarks();
@@ -115,5 +125,16 @@ export class BookmarksManager implements IBookmarksManager {
 
 	private saveGlobalBookmarks(): void {
 		this.storageService.store(BookmarksManager.GLOBAL_BOOKMARKS_STORAGE_KEY, JSON.stringify(Array.from(this.globalBookmarks)), StorageScope.GLOBAL);
+	}
+
+	private pushIntoSetFront(resource: string, scope: BookmarkType): void {
+		const bookmarksSet = scope === BookmarkType.WORKSPACE ? this.workspaceBookmarks : this.globalBookmarks;
+		const bookmarksArray = Array.from(bookmarksSet);
+		bookmarksArray.unshift(resource);
+		if (scope === BookmarkType.WORKSPACE) {
+			this.workspaceBookmarks = new Set(bookmarksArray);
+		} else {
+			this.globalBookmarks = new Set(bookmarksArray);
+		}
 	}
 }
