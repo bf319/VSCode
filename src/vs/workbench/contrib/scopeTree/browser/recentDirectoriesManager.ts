@@ -43,23 +43,23 @@ export class RecentDirectoriesManager implements IRecentDirectoriesManager {
 	}
 
 	private saveOpenedDirectory(resource: string): void {
-		const recentDirectoriesAsArray = Array.from(this.recentDirectories);
+		const recentDirs = Array.from(this.recentDirectories);
 
 		// Directory was already visited recently, move it to the front
 		if (this.recentDirectories.has(resource)) {
-			const elementIndex = recentDirectoriesAsArray.indexOf(resource);
-			recentDirectoriesAsArray.splice(elementIndex, 1);
-			recentDirectoriesAsArray.unshift(resource);
-			this.recentDirectories = new Set(recentDirectoriesAsArray);
+			const elementIndex = recentDirs.indexOf(resource);
+			recentDirs.splice(elementIndex, 1);
+			recentDirs.unshift(resource);
+			this.recentDirectories = new Set(recentDirs);
 			return;
 		}
 
-		recentDirectoriesAsArray.unshift(resource);
-		if (recentDirectoriesAsArray.length > this.STORAGE_SIZE) {
-			recentDirectoriesAsArray.splice(recentDirectoriesAsArray.length - 1, 1);
+		recentDirs.unshift(resource);
+		if (recentDirs.length > this.STORAGE_SIZE) {
+			recentDirs.splice(recentDirs.length - 1, 1);
 		}
 
-		this.recentDirectories = new Set(recentDirectoriesAsArray);
+		this.recentDirectories = new Set(recentDirs);
 	}
 
 	private getActiveFile(): URI | undefined {
