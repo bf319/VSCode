@@ -19,7 +19,7 @@ export class RecentDirectoriesManager implements IRecentDirectoriesManager {
 	readonly STORAGE_SIZE: number = 20;
 	static readonly RECENT_DIRECTORIES_STORAGE_KEY: string = 'workbench.explorer.recentDirectoriesStorageKey';
 
-	private _onOpenedDirectory = new Emitter<string>();
+	private _onOpenedDirectory = new Emitter<{ openedDir: string, replacedDir: string | undefined }>();
 	public onOpenedDirectory = this._onOpenedDirectory.event;
 
 	recentDirectories: Set<string> = new Set();
@@ -37,7 +37,6 @@ export class RecentDirectoriesManager implements IRecentDirectoriesManager {
 				const parentDirectory = dirname(resource).toString();
 				this.saveOpenedDirectory(parentDirectory);
 				this.storeRecentDirectories();
-				this._onOpenedDirectory.fire(parentDirectory);
 			}
 		});
 	}
@@ -51,15 +50,19 @@ export class RecentDirectoriesManager implements IRecentDirectoriesManager {
 			recentDirs.splice(elementIndex, 1);
 			recentDirs.unshift(resource);
 			this.recentDirectories = new Set(recentDirs);
+			this._onOpenedDirectory.fire({ openedDir: resource, replacedDir: resource });
 			return;
 		}
 
 		recentDirs.unshift(resource);
+		let replacedDir: string | undefined = undefined;	// undefined indicates that there was enough space for the new element
 		if (recentDirs.length > this.STORAGE_SIZE) {
+			replacedDir = recentDirs[recentDirs.length - 1];
 			recentDirs.splice(recentDirs.length - 1, 1);
 		}
 
 		this.recentDirectories = new Set(recentDirs);
+		this._onOpenedDirectory.fire({ openedDir: resource, replacedDir: replacedDir });
 	}
 
 	private getActiveFile(): URI | undefined {

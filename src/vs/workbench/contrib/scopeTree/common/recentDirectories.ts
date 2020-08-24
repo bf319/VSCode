@@ -10,7 +10,7 @@ export interface IRecentDirectoriesManager {
 	readonly _serviceBrand: undefined;
 	readonly STORAGE_SIZE: number;
 
-	onOpenedDirectory: Event<string>;
+	onOpenedDirectory: Event<{ openedDir: string, replacedDir: string | undefined }>;
 }
 
 export const IRecentDirectoriesManager = createDecorator<IRecentDirectoriesManager>('recentDirectoriesManager');
