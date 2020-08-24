@@ -298,7 +298,7 @@ export class ExplorerView extends ViewPane {
 
 	protected layoutBody(height: number, width: number): void {
 		super.layoutBody(height, width);
-		this.tree.layout(height - 8, width);
+		this.tree.layout(height, width);
 	}
 
 	renderBody(container: HTMLElement): void {
@@ -307,6 +307,7 @@ export class ExplorerView extends ViewPane {
 
 		const parentContainer = document.createElement('div');
 		const breadcrumbBackground = document.createElement('div');
+		breadcrumbBackground.style.height = `${ExplorerDelegate.ITEM_HEIGHT}px`;
 
 		DOM.addClass(this.breadcrumb, 'breadcrumb-file-tree');
 		DOM.addClass(breadcrumbBackground, 'breadcrumb-background');
