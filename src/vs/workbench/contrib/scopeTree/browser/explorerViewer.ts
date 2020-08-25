@@ -265,11 +265,17 @@ class BookmarkIconRenderer implements IDisposable {
 	constructor(stat: ExplorerItem, bookmarkManager: IBookmarksManager) {
 		this._iconContainer = document.createElement('img');
 		this._iconContainer.id = 'bookmarkIconContainer_' + stat.resource.toString();
-		this._iconContainer.className = bookmarkClass(bookmarkManager.getBookmarkType(stat.resource));
 		this._iconContainer.onclick = () => {
 			const newType = bookmarkManager.toggleBookmarkType(stat.resource);
 			this._iconContainer.className = bookmarkClass(newType);
 		};
+
+		const bookmarkType = bookmarkManager.getBookmarkType(stat.resource);
+		this._iconContainer.className = bookmarkClass(bookmarkType);
+
+		if (!bookmarkType) {
+			this._iconContainer.style.visibility = 'hidden';
+		}
 	}
 
 	get iconContainer(): HTMLElement {
@@ -347,6 +353,12 @@ export class FilesRenderer implements ICompressibleTreeRenderer<ExplorerItem, Fu
 			templateData.label.element.style.display = 'none';
 			templateData.elementDisposable = this.renderInputBox(templateData.container, stat, editableData);
 		}
+	}
+
+	renderTwistie(element: ExplorerItem, twistieElement: HTMLElement): void {
+		twistieElement.style.paddingRight = '0px';
+		twistieElement.style.paddingLeft = '0px';
+		console.log('111');
 	}
 
 	renderCompressedElements(node: ITreeNode<ICompressedTreeNode<ExplorerItem>, FuzzyScore>, index: number, templateData: IFileTemplateData, height: number | undefined): void {

@@ -349,18 +349,28 @@ export class ExplorerView extends ViewPane {
 		}));
 
 		this._register(this.tree.onMouseOver(e => {
-			const icon = document.getElementById('iconContainer_' + e.element?.resource.toString());
+			const focusIcon = document.getElementById('iconContainer_' + e.element?.resource.toString());
+			const bookmarkIcon = document.getElementById('bookmarkIconContainer_' + e.element?.resource.toString());
 
-			if (icon !== null) {
-				icon.style.visibility = 'visible';
+			if (focusIcon) {
+				focusIcon.style.visibility = 'visible';
+			}
+
+			if (bookmarkIcon) {
+				bookmarkIcon.style.visibility = 'visible';
 			}
 		}));
 
 		this._register(this.tree.onMouseOut(e => {
-			const icon = document.getElementById('iconContainer_' + e.element?.resource.toString());
+			const focusIcon = document.getElementById('iconContainer_' + e.element?.resource.toString());
+			const bookmarkIcon = document.getElementById('bookmarkIconContainer_' + e.element?.resource.toString());
 
-			if (icon !== null) {
-				icon.style.visibility = 'hidden';
+			if (focusIcon) {
+				focusIcon.style.visibility = 'hidden';
+			}
+
+			if (bookmarkIcon && e.element && !this.bookmarksManager.getBookmarkType(e.element.resource)) {
+				bookmarkIcon.style.visibility = 'hidden';
 			}
 		}));
 	}
