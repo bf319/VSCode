@@ -314,7 +314,7 @@ export class ExplorerView extends ViewPane {
 		DOM.append(container, parentContainer);
 		DOM.append(breadcrumbBackground, this.breadcrumb);
 
-		if (this.isBodyVisible()) {
+		if (this.isExpanded()) {
 			container.parentElement?.insertBefore(breadcrumbBackground, container);
 		}
 
@@ -350,11 +350,16 @@ export class ExplorerView extends ViewPane {
 				}
 				// Find resource to focus from active editor input if set
 				this.selectActiveFile(false, true);
+			}
+		}));
+
+		this.onDidChangeExpansionState(e => {
+			if (e) {
 				container.parentElement?.insertBefore(breadcrumbBackground, container);
 			} else {
 				container.parentElement?.removeChild(breadcrumbBackground);
 			}
-		}));
+		});
 
 		this._register(this.tree.onMouseOver(e => {
 			const icon = document.getElementById('iconContainer_' + e.element?.resource.toString());
