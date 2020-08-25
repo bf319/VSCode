@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Event } from 'vs/base/common/event';
+import { Event, Emitter } from 'vs/base/common/event';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { DisposableStore } from 'vs/base/common/lifecycle';
 import { IExplorerService, IFilesConfiguration, SortOrder, IExplorerView } from 'vs/workbench/contrib/files/common/files';
@@ -40,6 +40,9 @@ export class ExplorerService implements IExplorerService {
 	private view: IExplorerView | undefined;
 	private model: ExplorerModel;
 
+	private _onDidChangeRoot = new Emitter<URI[]>();
+	public onDidChangeRoot = this._onDidChangeRoot.event;
+
 	constructor(
 		@IFileService private fileService: IFileService,
 		@IInstantiationService private instantiationService: IInstantiationService,
@@ -73,6 +76,7 @@ export class ExplorerService implements IExplorerService {
 			if (this.view) {
 				this.view.setTreeInput();
 			}
+			this._onDidChangeRoot.fire(this.roots.map(e => e.resource));
 		}));
 	}
 

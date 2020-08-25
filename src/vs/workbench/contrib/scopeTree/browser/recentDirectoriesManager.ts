@@ -12,6 +12,7 @@ import { DiffEditorInput } from 'vs/workbench/common/editor/diffEditorInput';
 import { withNullAsUndefined } from 'vs/base/common/types';
 import { toResource, SideBySideEditor } from 'vs/workbench/common/editor';
 import { dirname } from 'vs/base/common/resources';
+import { IExplorerService } from 'vs/workbench/contrib/files/common/files';
 
 export class RecentDirectoriesManager implements IRecentDirectoriesManager {
 	declare readonly _serviceBrand: undefined;
@@ -26,7 +27,8 @@ export class RecentDirectoriesManager implements IRecentDirectoriesManager {
 
 	constructor(
 		@IStorageService private readonly storageService: IStorageService,
-		@IEditorService private readonly editorService: IEditorService
+		@IEditorService private readonly editorService: IEditorService,
+		@IExplorerService private readonly explorerService: IExplorerService
 	) {
 		this.retrieveRecentDirectories();
 
@@ -38,6 +40,16 @@ export class RecentDirectoriesManager implements IRecentDirectoriesManager {
 				this.saveOpenedDirectory(parentDirectory);
 				this.storeRecentDirectories();
 			}
+			console.log(this.recentDirectories);
+		});
+
+		// Mark a directory that is set as root as 'recent'
+		this.explorerService.onDidChangeRoot(roots => {
+			roots.forEach(root => {
+				this.saveOpenedDirectory(root.toString());
+			});
+			this.storeRecentDirectories();
+			console.log(this.recentDirectories);
 		});
 	}
 
