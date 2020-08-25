@@ -61,8 +61,10 @@ const sortBookmarksByDate: ICommandHandler = (accessor: ServicesAccessor) => {
 	console.log('Sorting by date is not implemented');
 };
 
-const displayBookmarkInFileTree: ICommandHandler = (accessor: ServicesAccessor) => {
-	console.log('Displaying directory in file tree from bookmarks panel is not implemented');
+const displayBookmarkInFileTree: ICommandHandler = (accessor: ServicesAccessor, element: Bookmark | BookmarkHeader) => {
+	if (element && element instanceof Bookmark) {
+		accessor.get(IExplorerService).select(element.resource);
+	}
 };
 
 const toggleIconIfVisible = (resource: URI, scope: BookmarkType) => {
