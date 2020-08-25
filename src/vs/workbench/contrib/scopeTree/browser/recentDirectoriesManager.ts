@@ -49,7 +49,6 @@ export class RecentDirectoriesManager implements IRecentDirectoriesManager {
 				this.saveOpenedDirectory(root.toString());
 			});
 			this.storeRecentDirectories();
-			console.log(this.recentDirectories);
 		});
 	}
 
