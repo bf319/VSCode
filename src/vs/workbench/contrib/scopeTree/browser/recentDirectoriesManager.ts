@@ -40,7 +40,6 @@ export class RecentDirectoriesManager implements IRecentDirectoriesManager {
 				this.saveOpenedDirectory(parentDirectory);
 				this.storeRecentDirectories();
 			}
-			console.log(this.recentDirectories);
 		});
 
 		// Mark a directory that is set as root as 'recent'
