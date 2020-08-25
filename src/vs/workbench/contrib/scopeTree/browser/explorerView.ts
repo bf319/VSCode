@@ -314,8 +314,9 @@ export class ExplorerView extends ViewPane {
 		DOM.append(container, parentContainer);
 		DOM.append(breadcrumbBackground, this.breadcrumb);
 
-		if (this.isExpanded()) {
-			container.parentElement?.insertBefore(breadcrumbBackground, container);
+		container.parentElement?.insertBefore(breadcrumbBackground, container);
+		if (!this.isExpanded()) {
+			DOM.hide(breadcrumbBackground);
 		}
 
 		this.treeContainer = DOM.append(parentContainer, DOM.$('.explorer-folders-view'));
@@ -355,9 +356,9 @@ export class ExplorerView extends ViewPane {
 
 		this.onDidChangeExpansionState(e => {
 			if (e) {
-				container.parentElement?.insertBefore(breadcrumbBackground, container);
+				DOM.show(breadcrumbBackground);
 			} else {
-				container.parentElement?.removeChild(breadcrumbBackground);
+				DOM.hide(breadcrumbBackground);
 			}
 		});
 
