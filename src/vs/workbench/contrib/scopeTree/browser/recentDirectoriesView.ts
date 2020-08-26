@@ -67,7 +67,7 @@ class RecentDirectoryElementIconRenderer extends DirectoryElementIconRenderer {
 		};
 
 		if (bookmarkType === BookmarkType.NONE) {
-			this._bookmarkIcon.style.opacity = '0';
+			this._bookmarkIcon.style.visibility = 'hidden';
 		}
 
 		if (this.container.firstChild) {
@@ -192,14 +192,14 @@ export class RecentDirectoriesView extends ViewPane {
 		this._register(this.tree.onMouseOver(e => {
 			const bookmarkIcon = document.getElementById('bookmarkIconRecentDirectoryContainer_' + e.element?.resource.toString());
 			if (bookmarkIcon && e.element && this.bookmarksManager.getBookmarkType(e.element.resource) === BookmarkType.NONE) {
-				bookmarkIcon.style.opacity = '1';
+				bookmarkIcon.style.visibility = 'visible';
 			}
 		}));
 
 		this._register(this.tree.onMouseOut(e => {
 			const bookmarkIcon = document.getElementById('bookmarkIconRecentDirectoryContainer_' + e.element?.resource.toString());
 			if (bookmarkIcon && e.element && this.bookmarksManager.getBookmarkType(e.element.resource) === BookmarkType.NONE) {
-				bookmarkIcon.style.opacity = '0';
+				bookmarkIcon.style.visibility = 'hidden';
 			}
 		}));
 	}
