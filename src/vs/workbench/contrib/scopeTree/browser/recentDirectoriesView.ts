@@ -19,100 +19,42 @@ import { IViewletViewOptions } from 'vs/workbench/browser/parts/views/viewsViewl
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IMenuService, IMenu } from 'vs/platform/actions/common/actions';
 import { URI } from 'vs/base/common/uri';
-import { dirname, basename } from 'vs/base/common/resources';
 import { IListVirtualDelegate, IKeyboardNavigationLabelProvider } from 'vs/base/browser/ui/list/list';
-import { IDisposable, Disposable } from 'vs/base/common/lifecycle';
-import { ResourceLabels, IResourceLabel } from 'vs/workbench/browser/labels';
+import { IDisposable } from 'vs/base/common/lifecycle';
+import { ResourceLabels } from 'vs/workbench/browser/labels';
 import { ScrollbarVisibility } from 'vs/base/common/scrollable';
 import { IExplorerService } from 'vs/workbench/contrib/files/common/files';
 import { WorkbenchObjectTree } from 'vs/platform/list/browser/listService';
 import { createMatches, FuzzyScore } from 'vs/base/common/filters';
-import { ITreeRenderer, ITreeNode, ITreeElement } from 'vs/base/browser/ui/tree/tree';
+import { ITreeNode, ITreeElement } from 'vs/base/browser/ui/tree/tree';
 import { bookmarkClass, IBookmarksManager, BookmarkType } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
+import { Directory, IDirectoryTemplateData, DirectoryElementIconRenderer, DirectoryRenderer } from 'vs/workbench/contrib/scopeTree/browser/directoryViewer';
 
-class RecentDirectory {
-	public resource: URI;
-
-	constructor(path: string) {
-		this.resource = URI.parse(path);
-	}
-
-	public getName(): string {
-		return basename(this.resource);
-	}
-
-	public getParent(): string {
-		return dirname(this.resource).toString();
-	}
-}
-
-export class DirectoryDelegate implements IListVirtualDelegate<RecentDirectory> {
+export class DirectoryDelegate implements IListVirtualDelegate<Directory> {
 	static readonly ITEM_HEIGHT = 22;
 
-	getHeight(element: RecentDirectory): number {
+	getHeight(element: Directory): number {
 		return DirectoryDelegate.ITEM_HEIGHT;
 	}
 
-	getTemplateId(element: RecentDirectory): string {
+	getTemplateId(element: Directory): string {
 		return 'RecentDirectoriesRenderer';
 	}
 }
 
-interface IDirectoryTemplateData {
-	dirContainer: HTMLElement;
-	label: IResourceLabel;
-	elementDisposable: IDisposable;
-}
-
-class DirectoryElementIconRenderer implements IDisposable {
-	private _focusIcon!: HTMLElement;
+class RecentDirectoryElementIconRenderer extends DirectoryElementIconRenderer {
 	private _bookmarkIcon!: HTMLElement;
 
-	constructor(private readonly container: HTMLElement,
-		private readonly stat: URI,
-		private readonly explorerService: IExplorerService,
+	constructor(container: HTMLElement,
+		stat: URI,
+		explorerService: IExplorerService,
 		private readonly bookmarksManager: IBookmarksManager) {
+		super(container, stat, explorerService);
 		this.renderBookmarkIcon();
-		this.renderFocusIcon();
-		this.addListeners();
-	}
-
-	get focusIcon(): HTMLElement {
-		return this._focusIcon;
 	}
 
 	get bookmarkIcon(): HTMLElement {
 		return this._bookmarkIcon;
-	}
-
-	private showIcon = () => {
-		this._focusIcon.style.visibility = 'visible';
-	};
-
-	private hideIcon = () => {
-		this._focusIcon.style.visibility = 'hidden';
-	};
-
-	private select = async () => {
-		await this.explorerService.select(this.stat, true);	// Should also expand directory
-	};
-
-	private setRoot = () => {
-		this.explorerService.setRoot(this.stat);
-	};
-
-	private addListeners(): void {
-		this.container.addEventListener('mouseover', this.showIcon);
-		this.container.addEventListener('mouseout', this.hideIcon);
-		this.container.addEventListener('dblclick', this.select);
-		this._focusIcon.addEventListener('click', this.setRoot);
-	}
-
-	private renderFocusIcon(): void {
-		this._focusIcon = document.createElement('img');
-		this._focusIcon.className = 'scope-tree-focus-icon-near-bookmark';
-		this._focusIcon.style.paddingLeft = '5px';
-		this.container.insertBefore(this._focusIcon, this.container.firstChild);
 	}
 
 	private renderBookmarkIcon(): void {
@@ -129,55 +71,43 @@ class DirectoryElementIconRenderer implements IDisposable {
 			this._bookmarkIcon.style.opacity = '0';
 		}
 
-		this.container.insertBefore(this._bookmarkIcon, this.container.firstChild);
+		if (this.container.firstChild) {
+			this.container.insertBefore(this._bookmarkIcon, this.container.firstChild?.nextSibling);
+		}
 	}
 
 	dispose(): void {
-		this._focusIcon.remove();
+		super.dispose();
 		this._bookmarkIcon.remove();
-		// Listeners need to be removed because container (templateData.label.element) is not removed from the DOM.
-		this.container.removeEventListener('mouseover', this.showIcon);
-		this.container.removeEventListener('mouseout', this.hideIcon);
-		this.container.removeEventListener('dblclick', this.select);
-		this._focusIcon.removeEventListener('click', this.setRoot);
 	}
 }
 
-class DirectoryRenderer implements ITreeRenderer<RecentDirectory, FuzzyScore, IDirectoryTemplateData> {
+class RecentDirectoryRenderer extends DirectoryRenderer {
 	static readonly ID = 'RecentDirectoriesRenderer';
 
 	constructor(
-		private labels: ResourceLabels,
-		private readonly explorerService: IExplorerService,
+		labels: ResourceLabels,
+		explorerService: IExplorerService,
 		private readonly bookmarksManager: IBookmarksManager
-	) { }
-
-	get templateId() {
-		return DirectoryRenderer.ID;
+	) {
+		super(labels, explorerService);
 	}
 
-	renderTwistie(element: RecentDirectory, twistieElement: HTMLElement): void {
+	get templateId() {
+		return RecentDirectoryRenderer.ID;
+	}
+
+	renderTwistie(element: Directory, twistieElement: HTMLElement): void {
 		// Even though the twistie is not visible, it causes some extra padding so it should be removed
 		twistieElement.remove();
 	}
 
-	renderTemplate(container: HTMLElement): IDirectoryTemplateData {
-		const label = this.labels.create(container, { supportHighlights: true });
-		const dirContainer = DOM.append(container, document.createElement('div'));
-		return { dirContainer: dirContainer, label: label, elementDisposable: Disposable.None };
-	}
-
-	renderElement(element: ITreeNode<RecentDirectory, FuzzyScore>, index: number, templateData: IDirectoryTemplateData, height: number | undefined): void {
+	renderElement(element: ITreeNode<Directory, FuzzyScore>, index: number, templateData: IDirectoryTemplateData, height: number | undefined): void {
 		templateData.elementDisposable.dispose();
 		templateData.elementDisposable = this.renderRecentDirectory(element.element, templateData, element.filterData);
 	}
 
-	disposeTemplate(templateData: IDirectoryTemplateData): void {
-		templateData.elementDisposable.dispose();
-		templateData.label.dispose();
-	}
-
-	private renderRecentDirectory(dir: RecentDirectory, templateData: IDirectoryTemplateData, filterData: FuzzyScore | undefined): IDisposable {
+	private renderRecentDirectory(dir: Directory, templateData: IDirectoryTemplateData, filterData: FuzzyScore | undefined): IDisposable {
 		templateData.label.setResource({
 			resource: dir.resource,
 			name: dir.getName(),
@@ -186,7 +116,7 @@ class DirectoryRenderer implements ITreeRenderer<RecentDirectory, FuzzyScore, ID
 			matches: createMatches(filterData)
 		});
 
-		return new DirectoryElementIconRenderer(templateData.label.element, dir.resource, this.explorerService, this.bookmarksManager);
+		return new RecentDirectoryElementIconRenderer(templateData.label.element, dir.resource, this.explorerService, this.bookmarksManager);
 	}
 }
 
@@ -195,9 +125,9 @@ export class RecentDirectoriesView extends ViewPane {
 	static readonly NAME = 'Recent directories';
 
 	private labels!: ResourceLabels;
-	private tree!: WorkbenchObjectTree<RecentDirectory>;
+	private tree!: WorkbenchObjectTree<Directory>;
 
-	private dirs: ITreeElement<RecentDirectory>[] = [];
+	private dirs: ITreeElement<Directory>[] = [];
 
 	private contributedContextMenu!: IMenu;
 
@@ -247,11 +177,11 @@ export class RecentDirectoriesView extends ViewPane {
 		super.renderBody(container);
 
 		this.labels = this.instantiationService.createInstance(ResourceLabels, { onDidChangeVisibility: this.onDidChangeBodyVisibility });
-		this.tree = <WorkbenchObjectTree<RecentDirectory>>this.instantiationService.createInstance(WorkbenchObjectTree, 'RecentDirectories', container,
-			new DirectoryDelegate(), [new DirectoryRenderer(this.labels, this.explorerService, this.bookmarksManager)],
+		this.tree = <WorkbenchObjectTree<Directory>>this.instantiationService.createInstance(WorkbenchObjectTree, 'RecentDirectories', container,
+			new DirectoryDelegate(), [new RecentDirectoryRenderer(this.labels, this.explorerService, this.bookmarksManager)],
 			{
 				accessibilityProvider: {
-					getAriaLabel(element: RecentDirectory) {
+					getAriaLabel(element: Directory) {
 						return element.resource.toString();
 					},
 
@@ -290,12 +220,12 @@ export class RecentDirectoriesView extends ViewPane {
 
 	private getDirectoriesTreeElement(rawDirs: Set<string>) {
 		rawDirs.forEach(path => this.dirs.push({
-			element: new RecentDirectory(path)
+			element: new Directory(path)
 		}));
 	}
 
 	private renderNewDir(resource: string): void {
-		this.dirs.splice(0, 0, { element: new RecentDirectory(resource) });
+		this.dirs.splice(0, 0, { element: new Directory(resource) });
 		this.tree.setChildren(null, this.dirs);
 	}
 
@@ -305,8 +235,8 @@ export class RecentDirectoriesView extends ViewPane {
 	}
 }
 
-class RecentDirectoriesKeyboardNavigationLabelProvider implements IKeyboardNavigationLabelProvider<RecentDirectory> {
-	getKeyboardNavigationLabel(element: RecentDirectory): string {
+class RecentDirectoriesKeyboardNavigationLabelProvider implements IKeyboardNavigationLabelProvider<Directory> {
+	getKeyboardNavigationLabel(element: Directory): string {
 		return element.getName();
 	}
 }

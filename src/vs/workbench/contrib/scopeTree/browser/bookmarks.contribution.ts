@@ -7,7 +7,7 @@ import { ICommandHandler } from 'vs/platform/commands/common/commands';
 import { IBookmarksManager, BookmarkType, bookmarkClass } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
 import { MenuRegistry, MenuId } from 'vs/platform/actions/common/actions';
 import { KeybindingsRegistry, KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
-import { Bookmark, BookmarkHeader } from 'vs/workbench/contrib/scopeTree/browser/bookmarksView';
+import { BookmarkHeader } from 'vs/workbench/contrib/scopeTree/browser/bookmarksView';
 import { IExplorerService } from 'vs/workbench/contrib/files/common/files';
 import { URI } from 'vs/base/common/uri';
 import { ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
@@ -16,9 +16,10 @@ import { IListService } from 'vs/platform/list/browser/listService';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { getMultiSelectedResources } from 'vs/workbench/contrib/files/browser/files';
 import { AbstractTree } from 'vs/base/browser/ui/tree/abstractTree';
+import { Directory } from 'vs/workbench/contrib/scopeTree/browser/directoryViewer';
 
 // Handlers implementations for context menu actions
-const changeFileExplorerRoot: ICommandHandler = (accessor: ServicesAccessor, element: Bookmark) => {
+const changeFileExplorerRoot: ICommandHandler = (accessor: ServicesAccessor, element: Directory) => {
 	const explorerService = accessor.get(IExplorerService);
 	const listService = accessor.get(IListService);
 	const editorService = accessor.get(IEditorService);
@@ -35,8 +36,8 @@ const changeFileExplorerRoot: ICommandHandler = (accessor: ServicesAccessor, ele
 		if (lastFocusedList && lastFocusedList?.getHTMLElement() === document.activeElement) {
 			// Selection in bookmarks panel (don't allow multiple selection)
 			const currentFocus = lastFocusedList.getFocus();
-			if (lastFocusedList instanceof AbstractTree && currentFocus.every(item => item instanceof Bookmark)) {
-				const resource = currentFocus.length === 1 ? (currentFocus[0] as Bookmark).resource : undefined;
+			if (lastFocusedList instanceof AbstractTree && currentFocus.every(item => item instanceof Directory)) {
+				const resource = currentFocus.length === 1 ? (currentFocus[0] as Directory).resource : undefined;
 				if (resource) {
 					explorerService.setRoot(resource);
 				}
@@ -72,7 +73,7 @@ const toggleIconIfVisible = (resource: URI, scope: BookmarkType) => {
 	}
 };
 
-const handleBookmarksChange = (accessor: ServicesAccessor, element: Bookmark, newScope: BookmarkType) => {
+const handleBookmarksChange = (accessor: ServicesAccessor, element: Directory, newScope: BookmarkType) => {
 	const bookmarksManager = accessor.get(IBookmarksManager);
 	const resource = element.resource;
 	bookmarksManager.addBookmark(resource, newScope);
@@ -138,8 +139,8 @@ MenuRegistry.appendMenuItem(MenuId.DisplayBookmarksContext, {
 KeybindingsRegistry.registerCommandAndKeybindingRule({
 	id: 'removeBookmark',
 	weight: KeybindingWeight.WorkbenchContrib,
-	handler: (accessor: ServicesAccessor, element: Bookmark | BookmarkHeader) => {
-		if (element && element instanceof Bookmark) {
+	handler: (accessor: ServicesAccessor, element: Directory | BookmarkHeader) => {
+		if (element && element instanceof Directory) {
 			handleBookmarksChange(accessor, element, BookmarkType.NONE);
 		}
 	}
@@ -148,8 +149,8 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 KeybindingsRegistry.registerCommandAndKeybindingRule({
 	id: 'toggleBookmarkType',
 	weight: KeybindingWeight.WorkbenchContrib,
-	handler: (accessor: ServicesAccessor, element: Bookmark | BookmarkHeader) => {
-		if (element && element instanceof Bookmark) {
+	handler: (accessor: ServicesAccessor, element: Directory | BookmarkHeader) => {
+		if (element && element instanceof Directory) {
 			const currentBookmarkType = accessor.get(IBookmarksManager).getBookmarkType(element.resource);
 			const toggledBookmarkType = currentBookmarkType === BookmarkType.WORKSPACE ? BookmarkType.GLOBAL : BookmarkType.WORKSPACE;
 			handleBookmarksChange(accessor, element, toggledBookmarkType);
