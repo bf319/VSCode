@@ -20,8 +20,8 @@ export class RecentDirectoriesManager implements IRecentDirectoriesManager {
 	readonly STORAGE_SIZE: number = 20;
 	static readonly RECENT_DIRECTORIES_STORAGE_KEY: string = 'workbench.explorer.recentDirectoriesStorageKey';
 
-	private _onOpenedDirectory = new Emitter<{ openedDir: string, replacedDir: string | undefined }>();
-	public onOpenedDirectory = this._onOpenedDirectory.event;
+	private _onRecentDirectoriesChanged = new Emitter<void>();
+	public onRecentDirectoriesChanged = this._onRecentDirectoriesChanged.event;
 
 	recentDirectories: Set<string> = new Set();
 
@@ -52,27 +52,22 @@ export class RecentDirectoriesManager implements IRecentDirectoriesManager {
 	}
 
 	private saveOpenedDirectory(resource: string): void {
-		const recentDirs = Array.from(this.recentDirectories);
-
-		// Directory was already visited recently, move it to the front
+		// Directory was already visited recently, mark it as most recent by making reinserting it in the set
 		if (this.recentDirectories.has(resource)) {
-			const elementIndex = recentDirs.indexOf(resource);
-			recentDirs.splice(elementIndex, 1);
-			recentDirs.unshift(resource);
-			this.recentDirectories = new Set(recentDirs);
-			this._onOpenedDirectory.fire({ openedDir: resource, replacedDir: resource });
+			this.recentDirectories.delete(resource);
+			this.recentDirectories.add(resource);
+			this._onRecentDirectoriesChanged.fire();
 			return;
 		}
 
-		recentDirs.unshift(resource);
-		let replacedDir: string | undefined = undefined;	// undefined indicates that there was enough space for the new element
-		if (recentDirs.length > this.STORAGE_SIZE) {
-			replacedDir = recentDirs[recentDirs.length - 1];
-			recentDirs.splice(recentDirs.length - 1, 1);
+		this.recentDirectories.add(resource);
+		if (this.recentDirectories.size > this.STORAGE_SIZE) {
+			// Need to remove entry at position 0
+			const removedItem = this.recentDirectories.values().next().value;
+			this.recentDirectories.delete(removedItem);
 		}
 
-		this.recentDirectories = new Set(recentDirs);
-		this._onOpenedDirectory.fire({ openedDir: resource, replacedDir: replacedDir });
+		this._onRecentDirectoriesChanged.fire();
 	}
 
 	private getActiveFile(): URI | undefined {

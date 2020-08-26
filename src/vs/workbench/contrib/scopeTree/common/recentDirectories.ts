@@ -11,7 +11,7 @@ export interface IRecentDirectoriesManager {
 	readonly STORAGE_SIZE: number;
 	recentDirectories: Set<string>;
 
-	onOpenedDirectory: Event<{ openedDir: string, replacedDir: string | undefined }>;
+	onRecentDirectoriesChanged: Event<void>;
 }
 
 export const IRecentDirectoriesManager = createDecorator<IRecentDirectoriesManager>('recentDirectoriesManager');
