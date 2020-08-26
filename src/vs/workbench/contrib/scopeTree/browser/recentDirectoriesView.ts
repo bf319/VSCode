@@ -4,7 +4,6 @@
  *--------------------------------------------------------------------------------------------*/
 
 import 'vs/css!./media/bookmarkIcon';
-import * as DOM from 'vs/base/browser/dom';
 import { ViewPane } from 'vs/workbench/browser/parts/views/viewPaneContainer';
 import { IRecentDirectoriesManager } from 'vs/workbench/contrib/scopeTree/common/recentDirectories';
 import { IViewDescriptorService } from 'vs/workbench/common/views';
@@ -149,14 +148,7 @@ export class RecentDirectoriesView extends ViewPane {
 	) {
 		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
 
-		this._register(this.recentDirectoriesManager.onOpenedDirectory(e => {
-			const openedDir = e.openedDir;
-			const replacedDir = e.replacedDir;
-			if (replacedDir) {
-				this.removeDirectory(replacedDir);
-			}
-			this.renderNewDir(openedDir);
-		}));
+		this._register(this.recentDirectoriesManager.onRecentDirectoriesChanged(() => this.refreshView()));
 
 		this._register(this.bookmarksManager.onAddedBookmark(e => {
 			if (this.dirs.find(dir => dir.element.resource.toString() === e.uri.toString())) {
@@ -164,9 +156,9 @@ export class RecentDirectoriesView extends ViewPane {
 				if (bookmarkIcon) {
 					bookmarkIcon.className = bookmarkClass(e.bookmarkType);
 					if (e.bookmarkType === BookmarkType.NONE) {
-						bookmarkIcon.style.opacity = '0';
+						bookmarkIcon.style.visibility = 'hidden';
 					} else {
-						bookmarkIcon.style.opacity = '1';
+						bookmarkIcon.style.visibility = 'visible';
 					}
 				}
 			}
@@ -195,8 +187,7 @@ export class RecentDirectoriesView extends ViewPane {
 		this._register(this.labels);
 		this._register(this.tree);
 
-		this.getDirectoriesTreeElement(this.recentDirectoriesManager.recentDirectories);
-		this.tree.setChildren(null, this.dirs);
+		this.refreshView();
 
 		this._register(this.tree.onMouseOver(e => {
 			const bookmarkIcon = document.getElementById('bookmarkIconRecentDirectoryContainer_' + e.element?.resource.toString());
@@ -218,20 +209,16 @@ export class RecentDirectoriesView extends ViewPane {
 		this.tree.layout(height, width);
 	}
 
+	private refreshView() {
+		this.getDirectoriesTreeElement(this.recentDirectoriesManager.recentDirectories);
+		this.tree.setChildren(null, this.dirs);
+	}
+
 	private getDirectoriesTreeElement(rawDirs: Set<string>) {
-		rawDirs.forEach(path => this.dirs.push({
+		this.dirs = [];
+		rawDirs.forEach(path => this.dirs.unshift({
 			element: new Directory(path)
 		}));
-	}
-
-	private renderNewDir(resource: string): void {
-		this.dirs.splice(0, 0, { element: new Directory(resource) });
-		this.tree.setChildren(null, this.dirs);
-	}
-
-	private removeDirectory(resource: string) {
-		this.dirs = this.dirs.filter(e => e.element.resource.toString() !== resource);
-		this.tree.setChildren(null, this.dirs);
 	}
 }
 
