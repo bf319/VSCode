@@ -14,8 +14,8 @@ export class BookmarksManager implements IBookmarksManager {
 	static readonly WORKSPACE_BOOKMARKS_STORAGE_KEY: string = 'workbench.explorer.bookmarksWorkspace';
 	static readonly GLOBAL_BOOKMARKS_STORAGE_KEY: string = 'workbench.explorer.bookmarksGlobal';
 
-	globalBookmarks: string[] = [];
-	workspaceBookmarks: string[] = [];
+	globalBookmarks: Set<string> = new Set();
+	workspaceBookmarks: Set<string> = new Set();
 
 	private _onAddedBookmark = new Emitter<{ uri: URI, bookmarkType: BookmarkType, prevBookmarkType: BookmarkType }>();
 	public onAddedBookmark = this._onAddedBookmark.event;
@@ -29,41 +29,43 @@ export class BookmarksManager implements IBookmarksManager {
 		this.initializeBookmarks();
 	}
 
-	// Preserve sorting by date when bookmarks are added to the sets (most recent is kept at index 0)
+	// Preserve sorting by date when bookmarks are added to the sets (most recent is the last inserted)
 	public addBookmark(resource: URI, scope: BookmarkType): void {
 		const resourceAsString = resource.toString();
 		let prevScope = BookmarkType.NONE;	// Undefined if bookmark already had the appropriate type
 
 		if (scope === BookmarkType.GLOBAL) {
-			if (this.deleteBookmark(resourceAsString, BookmarkType.GLOBAL)) {
+			if (this.globalBookmarks.delete(resourceAsString)) {
 				prevScope = BookmarkType.GLOBAL;
 			}
 
-			this.globalBookmarks.unshift(resourceAsString);
+			this.globalBookmarks.add(resourceAsString);
 			this.saveGlobalBookmarks();
 
-			if (this.deleteBookmark(resourceAsString, BookmarkType.WORKSPACE)) {
+			if (this.workspaceBookmarks.delete(resourceAsString)) {
 				this.saveWorkspaceBookmarks();
 				prevScope = BookmarkType.WORKSPACE;
 			}
 		} else if (scope === BookmarkType.WORKSPACE) {
-			if (this.deleteBookmark(resourceAsString, BookmarkType.WORKSPACE)) {
+			if (this.workspaceBookmarks.delete(resourceAsString)) {
 				prevScope = BookmarkType.WORKSPACE;
 			}
 
-			this.workspaceBookmarks.unshift(resourceAsString);
+			this.workspaceBookmarks.add(resourceAsString);
 			this.saveWorkspaceBookmarks();
 
-			if (this.deleteBookmark(resourceAsString, BookmarkType.GLOBAL)) {
+			if (this.globalBookmarks.delete(resourceAsString)) {
 				this.saveGlobalBookmarks();
 				prevScope = BookmarkType.GLOBAL;
 			}
+
 		} else {
-			if (this.deleteBookmark(resourceAsString, BookmarkType.GLOBAL)) {
+			if (this.globalBookmarks.delete(resourceAsString)) {
 				this.saveGlobalBookmarks();
 				prevScope = BookmarkType.GLOBAL;
 			}
-			if (this.deleteBookmark(resourceAsString, BookmarkType.WORKSPACE)) {
+
+			if (this.workspaceBookmarks.delete(resourceAsString)) {
 				this.saveWorkspaceBookmarks();
 				prevScope = BookmarkType.WORKSPACE;
 			}
@@ -75,11 +77,11 @@ export class BookmarksManager implements IBookmarksManager {
 	public getBookmarkType(resource: URI): BookmarkType {
 		const resourceAsString = resource.toString();
 
-		if (this.globalBookmarks.indexOf(resourceAsString) > -1) {
+		if (this.globalBookmarks.has(resourceAsString)) {
 			return BookmarkType.GLOBAL;
 		}
 
-		if (this.workspaceBookmarks.indexOf(resourceAsString) > -1) {
+		if (this.workspaceBookmarks.has(resourceAsString)) {
 			return BookmarkType.WORKSPACE;
 		}
 
@@ -106,14 +108,16 @@ export class BookmarksManager implements IBookmarksManager {
 	private initializeGlobalBookmarks(): void {
 		const rawGlobalBookmarks = this.storageService.get(BookmarksManager.GLOBAL_BOOKMARKS_STORAGE_KEY, StorageScope.GLOBAL);
 		if (rawGlobalBookmarks) {
-			this.globalBookmarks = JSON.parse(rawGlobalBookmarks) as string[];
+			const gBookmarks = JSON.parse(rawGlobalBookmarks) as string[];
+			this.globalBookmarks = new Set(gBookmarks);
 		}
 	}
 
 	private initializeWorkspaceBookmarks(): void {
 		const rawWorkspaceBookmarks = this.storageService.get(BookmarksManager.WORKSPACE_BOOKMARKS_STORAGE_KEY, StorageScope.WORKSPACE);
 		if (rawWorkspaceBookmarks) {
-			this.workspaceBookmarks = JSON.parse(rawWorkspaceBookmarks) as string[];
+			const wBookmarks = JSON.parse(rawWorkspaceBookmarks) as string[];
+			this.workspaceBookmarks = new Set(wBookmarks);
 		}
 	}
 
@@ -123,21 +127,5 @@ export class BookmarksManager implements IBookmarksManager {
 
 	private saveGlobalBookmarks(): void {
 		this.storageService.store(BookmarksManager.GLOBAL_BOOKMARKS_STORAGE_KEY, JSON.stringify(Array.from(this.globalBookmarks)), StorageScope.GLOBAL);
-	}
-
-	private deleteBookmark(resource: string, scope: BookmarkType): boolean {
-		const bookmarks = scope === BookmarkType.WORKSPACE ? this.workspaceBookmarks : this.globalBookmarks;
-		const index = bookmarks.indexOf(resource);
-		if (index === -1) {
-			return false;
-		}
-
-		if (scope === BookmarkType.WORKSPACE) {
-			this.workspaceBookmarks.splice(index, 1);
-		} else if (scope === BookmarkType.GLOBAL) {
-			this.globalBookmarks.splice(index, 1);
-		}
-
-		return true;
 	}
 }

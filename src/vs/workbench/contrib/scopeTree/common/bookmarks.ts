@@ -9,8 +9,8 @@ import { URI } from 'vs/base/common/uri';
 
 export interface IBookmarksManager {
 	readonly _serviceBrand: undefined;
-	readonly globalBookmarks: string[];
-	readonly workspaceBookmarks: string[];
+	readonly globalBookmarks: Set<string>;
+	readonly workspaceBookmarks: Set<string>;
 
 	addBookmark(resource: URI, scope: BookmarkType): void;
 	getBookmarkType(resource: URI): BookmarkType;

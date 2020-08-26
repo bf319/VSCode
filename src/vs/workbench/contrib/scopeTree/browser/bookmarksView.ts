@@ -372,7 +372,7 @@ export class BookmarksView extends ViewPane {
 		});
 	}
 
-	private sortBookmarkByName(bookmarks: string[]): string[] {
+	private sortBookmarkByName(bookmarks: Set<string>): string[] {
 		return Array.from(bookmarks).sort((path1: string, path2: string) => {
 			const compare = basename(URI.parse(path1)).localeCompare(basename(URI.parse(path2)));
 
@@ -381,8 +381,8 @@ export class BookmarksView extends ViewPane {
 		});
 	}
 
-	private getBookmarksTreeElements(rawBookmarks: string[], sortType: SortType): ITreeElement<Bookmark>[] {
-		const sortedBookmarks = sortType === SortType.NAME ? this.sortBookmarkByName(rawBookmarks) : rawBookmarks;
+	private getBookmarksTreeElements(rawBookmarks: Set<string>, sortType: SortType): ITreeElement<Bookmark>[] {
+		const sortedBookmarks = sortType === SortType.NAME ? this.sortBookmarkByName(rawBookmarks) : Array.from(rawBookmarks).reverse();
 		const treeElements: ITreeElement<Bookmark>[] = [];
 		for (let i = 0; i < sortedBookmarks.length; i++) {
 			treeElements.push({
