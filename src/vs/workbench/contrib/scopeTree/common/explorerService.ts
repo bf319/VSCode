@@ -40,7 +40,7 @@ export class ExplorerService implements IExplorerService {
 	private view: IExplorerView | undefined;
 	private model: ExplorerModel;
 
-	private _onDidChangeRoot = new Emitter<URI[]>();
+	private _onDidChangeRoot = new Emitter<void>();
 	public onDidChangeRoot = this._onDidChangeRoot.event;
 
 	constructor(
@@ -76,7 +76,7 @@ export class ExplorerService implements IExplorerService {
 			if (this.view) {
 				this.view.setTreeInput();
 			}
-			this._onDidChangeRoot.fire(this.roots.map(e => e.resource));
+			this._onDidChangeRoot.fire();
 		}));
 	}
 

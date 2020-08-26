@@ -50,7 +50,7 @@ export interface IExplorerService {
 	setToCopy(stats: ExplorerItem[], cut: boolean): Promise<void>;
 	isCut(stat: ExplorerItem): boolean;
 	setRoot(resource: URI): void;
-	onDidChangeRoot: Event<URI[]>;
+	onDidChangeRoot: Event<void>;
 
 	/**
 	 * Selects and reveal the file element provided by the given resource if its found in the explorer.

@@ -37,21 +37,20 @@ export class RecentDirectoriesManager implements IRecentDirectoriesManager {
 			const resource = this.getActiveFile();
 			if (resource) {
 				const parentDirectory = dirname(resource).toString();
-				this.saveOpenedDirectory(parentDirectory);
+				this.saveRecentDirectory(parentDirectory);
 				this.storeRecentDirectories();
 			}
 		});
 
 		// Mark a directory that is set as root as 'recent'
-		this.explorerService.onDidChangeRoot(roots => {
-			roots.forEach(root => {
-				this.saveOpenedDirectory(root.toString());
-			});
+		// this.explorerService.onDidChangeRoot(roots => {
+		this.explorerService.onDidChangeRoot(() => {
+			this.explorerService.roots.forEach(root => this.saveRecentDirectory(root.resource.toString()));
 			this.storeRecentDirectories();
 		});
 	}
 
-	private saveOpenedDirectory(resource: string): void {
+	private saveRecentDirectory(resource: string): void {
 		// Directory was already visited recently, mark it as most recent by making reinserting it in the set
 		if (this.recentDirectories.has(resource)) {
 			this.recentDirectories.delete(resource);
