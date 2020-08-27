@@ -330,7 +330,16 @@ export class ExplorerView extends ViewPane {
 
 		// When the explorer viewer is loaded, listen to changes to the editor input
 		this._register(this.editorService.onDidActiveEditorChange(() => {
-			this.selectActiveFile();
+			const resource = this.getActiveFile();
+			if (!resource) {
+				return;
+			}
+
+			if (this.isChildOfCurrentRoot(resource)) {
+				this.expandAncestorsToRoot(resource).then(() => this.selectActiveFile);
+			} else {
+				this.explorerService.setRoot(dirname(resource));
+			}
 		}));
 
 		// Also handle configuration updates
@@ -837,6 +846,43 @@ export class ExplorerView extends ViewPane {
 			} catch (e) {
 				// Element might not be in the tree, try again and silently fail
 				return this.selectResource(resource, reveal, retry + 1);
+			}
+		}
+	}
+
+	private isChildOfCurrentRoot(resource: URI): boolean {
+		const currentRoot = this.tree.getInput() as ExplorerItem;
+		if (!currentRoot) {
+			return false;
+		}
+
+		let remainingPath: URI = resource;
+		while (!this.isWorkspaceRoot(remainingPath)) {
+			if (remainingPath.toString() === currentRoot.resource.toString()) {
+				return true;
+			}
+
+			remainingPath = dirname(remainingPath);
+		}
+
+		return remainingPath.toString() === currentRoot.resource.toString();
+	}
+
+	private async expandAncestorsToRoot(resource: URI): Promise<void> {
+		const ancestors: URI[] = [];
+		let findAncestor: URI = resource;
+		let root = this.tree.getInput() as ExplorerItem;
+
+		while (findAncestor.toString() !== root.resource.toString()) {
+			ancestors.unshift(findAncestor);
+			findAncestor = dirname(findAncestor);
+		}
+
+		for (let i = 0; i < ancestors.length; i++) {
+			const child = root.getChild(basename(ancestors[i]));
+			if (child) {
+				await this.tree.expand(child);
+				root = child;
 			}
 		}
 	}
