@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { URI } from 'vs/base/common/uri';
+import { Event } from 'vs/base/common/event';
 import { IEditorOptions } from 'vs/editor/common/config/editorOptions';
 import { IWorkbenchEditorConfiguration, IEditorIdentifier, IEditorInput, toResource, SideBySideEditor } from 'vs/workbench/common/editor';
 import { IFilesConfiguration as PlatformIFilesConfiguration, FileChangeType, IFileService } from 'vs/platform/files/common/files';
@@ -49,6 +50,7 @@ export interface IExplorerService {
 	setToCopy(stats: ExplorerItem[], cut: boolean): Promise<void>;
 	isCut(stat: ExplorerItem): boolean;
 	setRoot(resource: URI): void;
+	onDidChangeRoot: Event<void>;
 
 	/**
 	 * Selects and reveal the file element provided by the given resource if its found in the explorer.
