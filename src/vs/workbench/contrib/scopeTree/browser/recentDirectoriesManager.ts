@@ -10,7 +10,7 @@ import { IStorageService, StorageScope } from 'vs/platform/storage/common/storag
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { DiffEditorInput } from 'vs/workbench/common/editor/diffEditorInput';
 import { withNullAsUndefined } from 'vs/base/common/types';
-import { toResource, SideBySideEditor } from 'vs/workbench/common/editor';
+import { toResource } from 'vs/workbench/common/editor';
 import { dirname } from 'vs/base/common/resources';
 import { IExplorerService } from 'vs/workbench/contrib/files/common/files';
 
@@ -76,7 +76,7 @@ export class RecentDirectoriesManager implements IRecentDirectoriesManager {
 			return undefined;
 		}
 
-		return withNullAsUndefined(toResource(input, { supportSideBySide: SideBySideEditor.PRIMARY }));
+		return withNullAsUndefined(toResource(input));
 	}
 
 	private retrieveRecentDirectories(): void {
