@@ -306,12 +306,18 @@ export class ExplorerView extends ViewPane {
 		this.renderParentButton();
 
 		const parentContainer = document.createElement('div');
-		const breadcrumbBackround = DOM.append(parentContainer, document.createElement('div'));
+		const breadcrumbBackground = document.createElement('div');
+		breadcrumbBackground.style.height = `${ExplorerDelegate.ITEM_HEIGHT}px`;
 
 		DOM.addClass(this.breadcrumb, 'breadcrumb-file-tree');
-		DOM.addClass(breadcrumbBackround, 'breadcrumb-background');
+		DOM.addClass(breadcrumbBackground, 'breadcrumb-background');
 		DOM.append(container, parentContainer);
-		DOM.append(breadcrumbBackround, this.breadcrumb);
+		DOM.append(breadcrumbBackground, this.breadcrumb);
+
+		container.parentElement?.insertBefore(breadcrumbBackground, container);
+		if (!this.isExpanded()) {
+			DOM.hide(breadcrumbBackground);
+		}
 
 		this.treeContainer = DOM.append(parentContainer, DOM.$('.explorer-folders-view'));
 
@@ -347,6 +353,14 @@ export class ExplorerView extends ViewPane {
 				this.selectActiveFile(false, true);
 			}
 		}));
+
+		this.onDidChangeExpansionState(e => {
+			if (e) {
+				DOM.show(breadcrumbBackground);
+			} else {
+				DOM.hide(breadcrumbBackground);
+			}
+		});
 
 		this._register(this.tree.onMouseOver(e => {
 			const icon = document.getElementById('iconContainer_' + e.element?.resource.toString());
