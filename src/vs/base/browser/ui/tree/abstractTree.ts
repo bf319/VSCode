@@ -1080,10 +1080,6 @@ class TreeNodeListMouseController<T, TFilterData, TRef> extends MouseController<
 		super(list);
 	}
 
-	private wasBookmarkClicked(target: HTMLElement): boolean {
-		return hasClass(target, 'bookmark-not-set') || hasClass(target, 'bookmark-set-workspace') || hasClass(target, 'bookmark-set-global');
-	}
-
 	protected onViewPointer(e: IListMouseEvent<ITreeNode<T, TFilterData>>): void {
 		if (isInputElement(e.browserEvent.target as HTMLElement) || isMonacoEditor(e.browserEvent.target as HTMLElement)) {
 			return;
@@ -1116,10 +1112,6 @@ class TreeNodeListMouseController<T, TFilterData, TRef> extends MouseController<
 		}
 
 		if (this.tree.expandOnlyOnDoubleClick && e.browserEvent.detail !== 2 && !onTwistie) {
-			return super.onViewPointer(e);
-		}
-
-		if (this.wasBookmarkClicked(target)) {
 			return super.onViewPointer(e);
 		}
 
