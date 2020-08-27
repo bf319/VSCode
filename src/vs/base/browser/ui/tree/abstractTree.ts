@@ -1081,7 +1081,6 @@ class TreeNodeListMouseController<T, TFilterData, TRef> extends MouseController<
 	}
 
 	private wasBookmarkClicked(target: HTMLElement): boolean {
-		// Cannot import the class names from contribution because it would break import restrictions
 		return hasClass(target, 'bookmark-not-set') || hasClass(target, 'bookmark-set-workspace') || hasClass(target, 'bookmark-set-global');
 	}
 
