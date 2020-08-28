@@ -17,8 +17,8 @@ export class BookmarksManager implements IBookmarksManager {
 	globalBookmarks: Set<string> = new Set();
 	workspaceBookmarks: Set<string> = new Set();
 
-	private _onAddedBookmark = new Emitter<{ uri: URI, bookmarkType: BookmarkType, prevBookmarkType: BookmarkType }>();
-	public onAddedBookmark = this._onAddedBookmark.event;
+	private _onBookmarksChanged = new Emitter<{ uri: URI, bookmarkType: BookmarkType, prevBookmarkType: BookmarkType }>();
+	public onBookmarksChanged = this._onBookmarksChanged.event;
 
 	private _onDidSortBookmark = new Emitter<SortType>();
 	public onDidSortBookmark = this._onDidSortBookmark.event;
@@ -65,7 +65,7 @@ export class BookmarksManager implements IBookmarksManager {
 			}
 		}
 
-		this._onAddedBookmark.fire({ uri: resource, bookmarkType: scope, prevBookmarkType: prevScope });
+		this._onBookmarksChanged.fire({ uri: resource, bookmarkType: scope, prevBookmarkType: prevScope });
 	}
 
 	public getBookmarkType(resource: URI): BookmarkType {

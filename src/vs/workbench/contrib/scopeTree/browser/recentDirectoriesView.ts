@@ -150,7 +150,7 @@ export class RecentDirectoriesView extends ViewPane {
 
 		this._register(this.recentDirectoriesManager.onRecentDirectoriesChanged(() => this.refreshView()));
 
-		this._register(this.bookmarksManager.onAddedBookmark(e => {
+		this._register(this.bookmarksManager.onBookmarksChanged(e => {
 			if (this.dirs.find(dir => dir.element.resource.toString() === e.uri.toString())) {
 				const bookmarkIcon = document.getElementById('bookmarkIconRecentDirectoryContainer_' + e.uri.toString());
 				if (bookmarkIcon) {

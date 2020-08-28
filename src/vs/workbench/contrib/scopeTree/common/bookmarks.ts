@@ -17,7 +17,7 @@ export interface IBookmarksManager {
 	toggleBookmarkType(resource: URI): BookmarkType;
 	sortBookmarks(sortType: SortType): void;
 
-	onAddedBookmark: Event<{ uri: URI, bookmarkType: BookmarkType, prevBookmarkType: BookmarkType }>;
+	onBookmarksChanged: Event<{ uri: URI, bookmarkType: BookmarkType, prevBookmarkType: BookmarkType }>;
 	onDidSortBookmark: Event<SortType>;
 }
 

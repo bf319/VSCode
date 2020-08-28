@@ -178,7 +178,7 @@ export class BookmarksView extends ViewPane {
 		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
 
 		this.labels = this.instantiationService.createInstance(ResourceLabels, { onDidChangeVisibility: this.onDidChangeBodyVisibility });
-		this._register(this.bookmarksManager.onAddedBookmark(e => {
+		this._register(this.bookmarksManager.onBookmarksChanged(e => {
 			const resource = e.uri;
 			const prevScope = e.prevBookmarkType;
 			const newScope = e.bookmarkType;
