@@ -15,8 +15,10 @@ export interface IBookmarksManager {
 	addBookmark(resource: URI, scope: BookmarkType): void;
 	getBookmarkType(resource: URI): BookmarkType;
 	toggleBookmarkType(resource: URI): BookmarkType;
+	sortBookmarks(sortType: SortType): void;
 
 	onAddedBookmark: Event<{ uri: URI, bookmarkType: BookmarkType, prevBookmarkType: BookmarkType }>;
+	onDidSortBookmark: Event<SortType>;
 }
 
 export const IBookmarksManager = createDecorator<IBookmarksManager>('bookmarksManager');
@@ -25,6 +27,11 @@ export const enum BookmarkType {
 	NONE,
 	WORKSPACE,
 	GLOBAL
+}
+
+export const enum SortType {
+	NAME,
+	DATE
 }
 
 export function bookmarkClass(type: BookmarkType): string {
