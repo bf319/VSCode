@@ -16,7 +16,7 @@ import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { IViewDescriptorService } from 'vs/workbench/common/views';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { IBookmarksManager, BookmarkType } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
+import { IBookmarksManager, BookmarkType, SortType } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
 import { Codicon } from 'vs/base/common/codicons';
 import { basename } from 'vs/base/common/resources';
 import { IExplorerService } from 'vs/workbench/contrib/files/common/files';
@@ -158,6 +158,8 @@ export class BookmarksView extends ViewPane {
 
 	private contributedContextMenu!: IMenu;
 
+	private sortType: SortType = SortType.NAME;
+
 	constructor(
 		options: IViewletViewOptions,
 		@IThemeService themeService: IThemeService,
@@ -186,6 +188,11 @@ export class BookmarksView extends ViewPane {
 				this.renderNewBookmark(resource, newScope);
 			}
 		}));
+
+		this._register(this.bookmarksManager.onDidSortBookmark(sortType => {
+			this.sortType = sortType;
+			this.sortAndRefresh(sortType);
+		}));
 	}
 
 	protected renderBody(container: HTMLElement): void {
@@ -194,12 +201,8 @@ export class BookmarksView extends ViewPane {
 		this.tree = this.createTree(container);
 		this._register(this.tree);
 
-		this.getBookmarksTreeElements(this.bookmarksManager.globalBookmarks, this.globalBookmarks);
-		this.getBookmarksTreeElements(this.bookmarksManager.workspaceBookmarks, this.workspaceBookmarks);
-
 		this.tree.setChildren(null, [{ element: this.globalBookmarksHeader }, { element: this.workspaceBookmarksHeader }]);
-		this.tree.setChildren(this.globalBookmarksHeader, this.globalBookmarks);
-		this.tree.setChildren(this.workspaceBookmarksHeader, this.workspaceBookmarks);
+		this.sortAndRefresh(this.sortType);
 
 		this._register(this.tree.onMouseClick(e => {
 			if (e.element instanceof BookmarkHeader) {
@@ -214,6 +217,14 @@ export class BookmarksView extends ViewPane {
 	protected layoutBody(height: number, width: number): void {
 		super.layoutBody(height, width);
 		this.tree.layout(height, width);
+	}
+
+	private sortAndRefresh(sortType: SortType) {
+		this.globalBookmarks = this.getBookmarksTreeElements(this.bookmarksManager.globalBookmarks, sortType);
+		this.workspaceBookmarks = this.getBookmarksTreeElements(this.bookmarksManager.workspaceBookmarks, sortType);
+
+		this.tree.setChildren(this.globalBookmarksHeader, this.globalBookmarks);
+		this.tree.setChildren(this.workspaceBookmarksHeader, this.workspaceBookmarks);
 	}
 
 	private createTree(container: HTMLElement): WorkbenchObjectTree<Directory | BookmarkHeader, FuzzyScore> {
@@ -263,7 +274,7 @@ export class BookmarksView extends ViewPane {
 		});
 	}
 
-	private sortBookmarkByName(bookmarks: Set<string>) {
+	private sortBookmarkByName(bookmarks: Set<string>): string[] {
 		return Array.from(bookmarks).sort((path1: string, path2: string) => {
 			const compare = basename(URI.parse(path1)).localeCompare(basename(URI.parse(path2)));
 
@@ -272,13 +283,16 @@ export class BookmarksView extends ViewPane {
 		});
 	}
 
-	private getBookmarksTreeElements(rawBookmarks: Set<string>, treeElements: ITreeElement<Directory>[]) {
-		const sortedBookmarks = this.sortBookmarkByName(rawBookmarks);
+	private getBookmarksTreeElements(rawBookmarks: Set<string>, sortType: SortType): ITreeElement<Directory>[] {
+		// Order has to be revesed when bookmarks are sorted by date because bookmarksManager keeps the most recent at the end of the array
+		const sortedBookmarks = sortType === SortType.NAME ? this.sortBookmarkByName(rawBookmarks) : Array.from(rawBookmarks).reverse();
+		const treeElements: ITreeElement<Directory>[] = [];
 		for (let i = 0; i < sortedBookmarks.length; i++) {
 			treeElements.push({
 				element: new Directory(sortedBookmarks[i])
 			});
 		}
+		return treeElements;
 	}
 
 	private toggleHeader(header: BookmarkHeader) {
@@ -291,19 +305,20 @@ export class BookmarksView extends ViewPane {
 
 	private renderNewBookmark(resource: URI, scope: BookmarkType): void {
 		const resourceAsString = resource.toString();
+		const resourceIndex = this.sortType === SortType.DATE ? 0 : this.findIndexInSortedArray(basename(resource), scope);
 		if (scope === BookmarkType.NONE) {
 			return;
 		}
 
 		if (scope === BookmarkType.WORKSPACE) {
-			this.workspaceBookmarks.splice(0, 0, { element: new Directory(resourceAsString) });
+			this.workspaceBookmarks.splice(resourceIndex, 0, { element: new Directory(resourceAsString) });
 			if (this.workspaceBookmarksHeader.expanded) {
 				this.tree.setChildren(this.workspaceBookmarksHeader, this.workspaceBookmarks);
 			}
 		}
 
 		if (scope === BookmarkType.GLOBAL) {
-			this.globalBookmarks.splice(0, 0, { element: new Directory(resourceAsString) });
+			this.globalBookmarks.splice(resourceIndex, 0, { element: new Directory(resourceAsString) });
 			if (this.globalBookmarksHeader.expanded) {
 				this.tree.setChildren(this.globalBookmarksHeader, this.globalBookmarks);
 			}
@@ -324,6 +339,24 @@ export class BookmarksView extends ViewPane {
 				this.tree.setChildren(this.globalBookmarksHeader, this.globalBookmarks);
 			}
 		}
+	}
+
+	private findIndexInSortedArray(resource: string, scope: BookmarkType) {
+		// Assuming that the bookmarks array is sorted by name, find the index for this resource using a binary search
+		const bookmarks = scope === BookmarkType.WORKSPACE ? this.workspaceBookmarks : this.globalBookmarks;
+		let left = 0;
+		let right = bookmarks.length;
+
+		while (left < right) {
+			const mid = (left + right) >>> 1;
+			if (bookmarks[mid].element.getName() < resource) {
+				left = mid + 1;
+			} else {
+				right = mid;
+			}
+		}
+
+		return left;
 	}
 }
 
