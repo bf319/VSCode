@@ -216,9 +216,10 @@ export class RecentDirectoriesView extends ViewPane {
 
 	private getDirectoriesTreeElement(rawDirs: Set<string>) {
 		this.dirs = [];
-		rawDirs.forEach(path => this.dirs.unshift({
+		rawDirs.forEach(path => this.dirs.push({
 			element: new Directory(path)
 		}));
+		this.dirs.reverse();
 	}
 }
 
