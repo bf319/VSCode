@@ -382,6 +382,7 @@ export class BookmarksView extends ViewPane {
 	}
 
 	private getBookmarksTreeElements(rawBookmarks: Set<string>, sortType: SortType): ITreeElement<Bookmark>[] {
+		// Order has to be revesed when bookmarks are sorted by date because bookmarksManager keeps the most recent at the end of the array
 		const sortedBookmarks = sortType === SortType.NAME ? this.sortBookmarkByName(rawBookmarks) : Array.from(rawBookmarks).reverse();
 		const treeElements: ITreeElement<Bookmark>[] = [];
 		for (let i = 0; i < sortedBookmarks.length; i++) {

@@ -34,38 +34,32 @@ export class BookmarksManager implements IBookmarksManager {
 		const resourceAsString = resource.toString();
 		let prevScope = BookmarkType.NONE;	// Undefined if bookmark already had the appropriate type
 
+		// Bookmarks are deleted even they have to be added again in order to preserve ordering by 'date added', with most recent being the last inserted
 		if (scope === BookmarkType.GLOBAL) {
 			if (this.globalBookmarks.delete(resourceAsString)) {
 				prevScope = BookmarkType.GLOBAL;
+			} else if (this.workspaceBookmarks.delete(resourceAsString)) {
+				this.saveWorkspaceBookmarks();
+				prevScope = BookmarkType.WORKSPACE;
 			}
 
 			this.globalBookmarks.add(resourceAsString);
 			this.saveGlobalBookmarks();
-
-			if (this.workspaceBookmarks.delete(resourceAsString)) {
-				this.saveWorkspaceBookmarks();
-				prevScope = BookmarkType.WORKSPACE;
-			}
 		} else if (scope === BookmarkType.WORKSPACE) {
 			if (this.workspaceBookmarks.delete(resourceAsString)) {
 				prevScope = BookmarkType.WORKSPACE;
+			} else if (this.globalBookmarks.delete(resourceAsString)) {
+				this.saveGlobalBookmarks();
+				prevScope = BookmarkType.GLOBAL;
 			}
 
 			this.workspaceBookmarks.add(resourceAsString);
 			this.saveWorkspaceBookmarks();
-
-			if (this.globalBookmarks.delete(resourceAsString)) {
-				this.saveGlobalBookmarks();
-				prevScope = BookmarkType.GLOBAL;
-			}
-
 		} else {
 			if (this.globalBookmarks.delete(resourceAsString)) {
 				this.saveGlobalBookmarks();
 				prevScope = BookmarkType.GLOBAL;
-			}
-
-			if (this.workspaceBookmarks.delete(resourceAsString)) {
+			} else if (this.workspaceBookmarks.delete(resourceAsString)) {
 				this.saveWorkspaceBookmarks();
 				prevScope = BookmarkType.WORKSPACE;
 			}
