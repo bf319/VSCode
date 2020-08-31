@@ -274,25 +274,28 @@ export class BookmarksView extends ViewPane {
 		});
 	}
 
-	private sortBookmarkByName(bookmarks: Set<string>): string[] {
-		return Array.from(bookmarks).sort((path1: string, path2: string) => {
-			const compare = basename(URI.parse(path1)).localeCompare(basename(URI.parse(path2)));
+	private sortBookmarksByName(bookmarks: ITreeElement<Directory>[]): ITreeElement<Directory>[] {
+		return bookmarks.sort((bookmark1, bookmark2) => {
+			const compareNames = bookmark1.element.getName().localeCompare(bookmark2.element.getName());
 
-			// Directories with identical names are sorted by the length of their path (might need to consider alternatives)
-			return compare ? compare : path1.split('/').length - path2.split('/').length;
+			// If directories have the same name, compare them by their full path
+			return compareNames || bookmark1.element.getParent().localeCompare(bookmark2.element.getParent());
 		});
 	}
 
-	private getBookmarksTreeElements(rawBookmarks: Set<string>, sortType: SortType): ITreeElement<Directory>[] {
+	private sortBookmarksByDate(bookmarks: ITreeElement<Directory>[]): ITreeElement<Directory>[] {
 		// Order has to be revesed when bookmarks are sorted by date because bookmarksManager keeps the most recent at the end of the array
-		const sortedBookmarks = sortType === SortType.NAME ? this.sortBookmarkByName(rawBookmarks) : Array.from(rawBookmarks).reverse();
-		const treeElements: ITreeElement<Directory>[] = [];
-		for (let i = 0; i < sortedBookmarks.length; i++) {
-			treeElements.push({
-				element: new Directory(sortedBookmarks[i])
+		return bookmarks.reverse();
+	}
+
+	private getBookmarksTreeElements(rawBookmarks: Set<string>, sortType: SortType): ITreeElement<Directory>[] {
+		const unsortedTreeElements: ITreeElement<Directory>[] = [];
+		rawBookmarks.forEach(bookmark => {
+			unsortedTreeElements.push({
+				element: new Directory(bookmark)
 			});
-		}
-		return treeElements;
+		});
+		return sortType === SortType.NAME ? this.sortBookmarksByName(unsortedTreeElements) : this.sortBookmarksByDate(unsortedTreeElements);
 	}
 
 	private toggleHeader(header: BookmarkHeader) {

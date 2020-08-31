@@ -14,17 +14,21 @@ import { FuzzyScore } from 'vs/base/common/filters';
 
 export class Directory {
 	private _resource: URI;
+	private _name: string;
+	private _parentName: string;
 
 	constructor(path: string) {
 		this._resource = URI.parse(path);
+		this._name = basename(this._resource);
+		this._parentName = dirname(this._resource).toString();
 	}
 
 	public getName(): string {
-		return basename(this._resource);
+		return this._name;
 	}
 
 	public getParent(): string {
-		return dirname(this._resource).toString();
+		return this._parentName;
 	}
 
 	get resource(): URI {
