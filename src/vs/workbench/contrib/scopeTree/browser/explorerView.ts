@@ -344,20 +344,7 @@ export class ExplorerView extends ViewPane {
 			if (this.isChildOfCurrentRoot(resource)) {
 				this.expandAncestorsToRoot(resource).then(() => this.selectActiveFile(false, true));
 			} else {
-				this.explorerService.setRoot(dirname(resource));
-			}
-		}));
-
-		this._register(this.explorerService.onDidChangeRoot(() => {
-			const root = this.tree.getInput() as ExplorerItem;
-			if (root) {
-				const activeFile = this.getActiveFile();
-				const treeSelection = this.tree.getSelection();
-				const activeFileSelected = treeSelection.find(selection => selection.resource.toString() === activeFile?.toString());
-
-				if (activeFile && !activeFileSelected && this.isChildOfCurrentRoot(activeFile)) {
-					this.selectActiveFile();
-				}
+				this.explorerService.setRoot(dirname(resource), resource);
 			}
 		}));
 

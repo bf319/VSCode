@@ -142,8 +142,13 @@ export class ExplorerService implements IExplorerService {
 		return !!this.cutItems && this.cutItems.indexOf(item) >= 0;
 	}
 
-	setRoot(resource: URI): void {
-		this.model.setRoot(resource, this.sortOrder);
+	setRoot(resource: URI, fileToSelect: URI | undefined = undefined): void {
+		this.model.setRoot(resource, this.sortOrder).then(() =>
+			this.view?.setTreeInput().then(() => {
+				if (fileToSelect) {
+					this.view?.selectResource(fileToSelect);
+				}
+			}));
 	}
 
 	getEditable(): { stat: ExplorerItem, data: IEditableData } | undefined {

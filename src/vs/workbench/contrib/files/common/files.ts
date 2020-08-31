@@ -49,7 +49,7 @@ export interface IExplorerService {
 	refresh(): Promise<void>;
 	setToCopy(stats: ExplorerItem[], cut: boolean): Promise<void>;
 	isCut(stat: ExplorerItem): boolean;
-	setRoot(resource: URI): void;
+	setRoot(resource: URI, selectResource?: URI): void;
 	onDidChangeRoot: Event<void>;
 
 	/**
