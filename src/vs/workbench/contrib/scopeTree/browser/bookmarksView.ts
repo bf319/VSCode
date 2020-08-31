@@ -33,17 +33,21 @@ import { IMenu, IMenuService, MenuId } from 'vs/platform/actions/common/actions'
 
 export class Bookmark {
 	private _resource: URI;
+	private _name: string;
+	private _parentName: string;
 
 	constructor(path: string) {
 		this._resource = URI.parse(path);
+		this._name = basename(this._resource);
+		this._parentName = dirname(this._resource).toString();
 	}
 
 	public getName(): string {
-		return basename(this._resource);
+		return this._name;
 	}
 
 	public getParent(): string {
-		return dirname(this._resource).toString();
+		return this._parentName;
 	}
 
 	get resource(): URI {
@@ -372,25 +376,28 @@ export class BookmarksView extends ViewPane {
 		});
 	}
 
-	private sortBookmarkByName(bookmarks: Set<string>): string[] {
-		return Array.from(bookmarks).sort((path1: string, path2: string) => {
-			const compare = basename(URI.parse(path1)).localeCompare(basename(URI.parse(path2)));
+	private sortBookmarksByName(bookmarks: ITreeElement<Bookmark>[]): ITreeElement<Bookmark>[] {
+		return bookmarks.sort((bookmark1, bookmark2) => {
+			const compareNames = bookmark1.element.getName().localeCompare(bookmark2.element.getName());
 
-			// Directories with identical names are sorted by the length of their path (might need to consider alternatives)
-			return compare ? compare : path1.split('/').length - path2.split('/').length;
+			// If directories have the same name, compare them by their full path
+			return compareNames ? compareNames : bookmark1.element.getParent().localeCompare(bookmark2.element.getParent());
 		});
 	}
 
-	private getBookmarksTreeElements(rawBookmarks: Set<string>, sortType: SortType): ITreeElement<Bookmark>[] {
+	private sortBookmarksByDate(bookmarks: ITreeElement<Bookmark>[]): ITreeElement<Bookmark>[] {
 		// Order has to be revesed when bookmarks are sorted by date because bookmarksManager keeps the most recent at the end of the array
-		const sortedBookmarks = sortType === SortType.NAME ? this.sortBookmarkByName(rawBookmarks) : Array.from(rawBookmarks).reverse();
-		const treeElements: ITreeElement<Bookmark>[] = [];
-		for (let i = 0; i < sortedBookmarks.length; i++) {
-			treeElements.push({
-				element: new Bookmark(sortedBookmarks[i])
+		return bookmarks.reverse();
+	}
+
+	private getBookmarksTreeElements(rawBookmarks: Set<string>, sortType: SortType): ITreeElement<Bookmark>[] {
+		const unsortedTreeElements: ITreeElement<Bookmark>[] = [];
+		rawBookmarks.forEach(bookmark => {
+			unsortedTreeElements.push({
+				element: new Bookmark(bookmark)
 			});
-		}
-		return treeElements;
+		});
+		return sortType === SortType.NAME ? this.sortBookmarksByName(unsortedTreeElements) : this.sortBookmarksByDate(unsortedTreeElements);
 	}
 
 	private toggleHeader(header: BookmarkHeader) {
