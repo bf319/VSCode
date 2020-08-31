@@ -381,7 +381,7 @@ export class BookmarksView extends ViewPane {
 			const compareNames = bookmark1.element.getName().localeCompare(bookmark2.element.getName());
 
 			// If directories have the same name, compare them by their full path
-			return compareNames ? compareNames : bookmark1.element.getParent().localeCompare(bookmark2.element.getParent());
+			return compareNames || bookmark1.element.getParent().localeCompare(bookmark2.element.getParent());
 		});
 	}
 
