@@ -401,7 +401,6 @@ export class FilesRenderer implements ICompressibleTreeRenderer<ExplorerItem, Fu
 
 	private renderStat(stat: ExplorerItem, label: string | string[], domId: string | undefined, filterData: FuzzyScore | undefined, templateData: IFileTemplateData): IDisposable {
 		templateData.label.element.style.display = 'flex';
-		templateData.label.element.style.float = '';
 		const extraClasses = ['explorer-item'];
 		if (this.explorerService.isCut(stat)) {
 			extraClasses.push('cut');
@@ -431,20 +430,17 @@ export class FilesRenderer implements ICompressibleTreeRenderer<ExplorerItem, Fu
 
 			disposables.add(focusIcon);
 
-			templateData.label.element.style.float = 'left';
+			templateData.label.element.appendChild(focusIcon.iconContainer);
 
 			if (this.bookmarksManager) {
 				const bookmarkIcon = new BookmarkIconRenderer(stat, this.bookmarksManager);
-				// const contentContainer = this.getContentsContainerElement(templateData.label.element);
+				const contentContainer = this.getContentsContainerElement(templateData.label.element);
 				// const rowContainer = this.getRowContainerElement(contentContainer);
 
 				disposables.add(bookmarkIcon);
 				// rowContainer.insertBefore(bookmarkIcon.iconContainer, contentContainer);
 				templateData.label.element.appendChild(bookmarkIcon.iconContainer);
 			}
-
-
-			templateData.label.element.appendChild(focusIcon.iconContainer);
 		}
 
 		disposables.add(prevDisposable);

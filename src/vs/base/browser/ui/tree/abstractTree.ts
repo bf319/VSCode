@@ -1116,10 +1116,6 @@ class TreeNodeListMouseController<T, TFilterData, TRef> extends MouseController<
 			return super.onViewPointer(e);
 		}
 
-		if (!this.tree.toggleCollapseStateOnBookmarkClick) {
-			return super.onViewPointer(e);
-		}
-
 		if (node.collapsible) {
 			const model = ((this.tree as any).model as ITreeModel<T, TFilterData, TRef>); // internal
 			const location = model.getNodeLocation(node);
@@ -1262,7 +1258,6 @@ export abstract class AbstractTree<T, TFilterData, TRef> implements IDisposable 
 
 	get expandOnlyOnDoubleClick(): boolean { return this._options.expandOnlyOnDoubleClick ?? false; }
 	get expandOnlyOnTwistieClick(): boolean | ((e: T) => boolean) { return typeof this._options.expandOnlyOnTwistieClick === 'undefined' ? false : this._options.expandOnlyOnTwistieClick; }
-	get toggleCollapseStateOnBookmarkClick(): boolean { return this._options.toggleCollapseStateOnBookmarksClick ?? false; }
 
 	private readonly _onDidUpdateOptions = new Emitter<IAbstractTreeOptions<T, TFilterData>>();
 	readonly onDidUpdateOptions: Event<IAbstractTreeOptions<T, TFilterData>> = this._onDidUpdateOptions.event;

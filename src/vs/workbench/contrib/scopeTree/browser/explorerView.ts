@@ -403,10 +403,6 @@ export class ExplorerView extends ViewPane {
 				bookmark.style.visibility = 'hidden';
 			}
 		}));
-
-		this.tree.onMouseDblClick(e => {
-			this.tree.updateOptions({ toggleCollapseStateOnBookmarkClick: false });
-		});
 	}
 
 	getActions(): IAction[] {
