@@ -336,7 +336,29 @@ export class ExplorerView extends ViewPane {
 
 		// When the explorer viewer is loaded, listen to changes to the editor input
 		this._register(this.editorService.onDidActiveEditorChange(() => {
-			this.selectActiveFile();
+			const resource = this.getActiveFile();
+			if (!resource) {
+				return;
+			}
+
+			if (this.isChildOfCurrentRoot(resource)) {
+				this.expandAncestorsToRoot(resource).then(() => this.selectActiveFile(false, true));
+			} else {
+				this.explorerService.setRoot(dirname(resource));
+			}
+		}));
+
+		this._register(this.explorerService.onDidChangeRoot(() => {
+			const root = this.tree.getInput() as ExplorerItem;
+			if (root) {
+				const activeFile = this.getActiveFile();
+				const treeSelection = this.tree.getSelection();
+				const activeFileSelected = treeSelection.find(selection => selection.resource.toString() === activeFile?.toString());
+
+				if (activeFile && !activeFileSelected && this.isChildOfCurrentRoot(activeFile)) {
+					this.selectActiveFile();
+				}
+			}
 		}));
 
 		// Also handle configuration updates
@@ -800,6 +822,47 @@ export class ExplorerView extends ViewPane {
 
 		// check for files
 		return withNullAsUndefined(toResource(input, { supportSideBySide: SideBySideEditor.PRIMARY }));
+	}
+
+	private isChildOfCurrentRoot(resource: URI): boolean {
+		const currentRoot = this.tree.getInput() as ExplorerItem;
+		if (!currentRoot) {
+			return false;
+		}
+		const currentRootResource = currentRoot.resource.toString();
+
+		let remainingPath: URI = resource;
+		while (!this.isWorkspaceRoot(remainingPath)) {
+			if (remainingPath.toString() === currentRootResource) {
+				return true;
+			}
+
+			remainingPath = dirname(remainingPath);
+		}
+
+		return remainingPath.toString() === currentRootResource;
+	}
+
+	private async expandAncestorsToRoot(resource: URI): Promise<void> {
+		const ancestors: URI[] = [];
+		const treeInput = this.tree.getInput() as ExplorerItem;
+		let findAncestor: URI = resource;
+
+		while (findAncestor.toString() !== treeInput.resource.toString()) {
+			ancestors.push(findAncestor);
+			findAncestor = dirname(findAncestor);
+		}
+
+		ancestors.reverse();
+
+		let toExpand = treeInput;
+		for (let i = 0; i < ancestors.length; i++) {
+			const expandNext = toExpand.getChild(basename(ancestors[i]));
+			if (expandNext) {
+				await this.tree.expand(expandNext);
+				toExpand = expandNext;
+			}
+		}
 	}
 
 	public async selectResource(resource: URI | undefined, reveal = this.autoReveal, retry = 0): Promise<void> {

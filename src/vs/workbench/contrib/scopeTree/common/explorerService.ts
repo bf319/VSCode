@@ -74,9 +74,8 @@ export class ExplorerService implements IExplorerService {
 		}));
 		this.disposables.add(this.model.onDidChangeRoots(() => {
 			if (this.view) {
-				this.view.setTreeInput();
+				this.view.setTreeInput().then(() => this._onDidChangeRoot.fire());
 			}
-			this._onDidChangeRoot.fire();
 		}));
 	}
 
