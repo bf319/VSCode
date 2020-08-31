@@ -18,7 +18,7 @@ import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IBookmarksManager, BookmarkType, SortType } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
 import { Codicon } from 'vs/base/common/codicons';
-import { dirname, basename } from 'vs/base/common/resources';
+import { basename } from 'vs/base/common/resources';
 import { IExplorerService } from 'vs/workbench/contrib/files/common/files';
 import { IListVirtualDelegate, IKeyboardNavigationLabelProvider } from 'vs/base/browser/ui/list/list';
 import { ScrollbarVisibility } from 'vs/base/common/scrollable';
@@ -26,34 +26,11 @@ import { IDisposable, Disposable, DisposableStore } from 'vs/base/common/lifecyc
 import { WorkbenchObjectTree } from 'vs/platform/list/browser/listService';
 import { FuzzyScore, createMatches } from 'vs/base/common/filters';
 import { ITreeRenderer, ITreeNode, ITreeElement, ITreeContextMenuEvent } from 'vs/base/browser/ui/tree/tree';
-import { IResourceLabel, ResourceLabels } from 'vs/workbench/browser/labels';
+import { ResourceLabels } from 'vs/workbench/browser/labels';
 import { IAction } from 'vs/base/common/actions';
 import { createAndFillInContextMenuActions } from 'vs/platform/actions/browser/menuEntryActionViewItem';
 import { IMenu, IMenuService, MenuId } from 'vs/platform/actions/common/actions';
-
-export class Bookmark {
-	private _resource: URI;
-	private _name: string;
-	private _parentName: string;
-
-	constructor(path: string) {
-		this._resource = URI.parse(path);
-		this._name = basename(this._resource);
-		this._parentName = dirname(this._resource).toString();
-	}
-
-	public getName(): string {
-		return this._name;
-	}
-
-	public getParent(): string {
-		return this._parentName;
-	}
-
-	get resource(): URI {
-		return this._resource;
-	}
-}
+import { Directory, IDirectoryTemplateData, DirectoryElementIconRenderer, DirectoryRenderer } from 'vs/workbench/contrib/scopeTree/browser/directoryViewer';
 
 export class BookmarkHeader {
 	expanded: boolean = true;
@@ -61,15 +38,15 @@ export class BookmarkHeader {
 	constructor(readonly scope: BookmarkType) { }
 }
 
-class BookmarkDelegate implements IListVirtualDelegate<Bookmark | BookmarkHeader> {
+class BookmarkDelegate implements IListVirtualDelegate<Directory | BookmarkHeader> {
 	static readonly ITEM_HEIGHT = 22;
 
-	getHeight(element: Bookmark | BookmarkHeader): number {
+	getHeight(element: Directory | BookmarkHeader): number {
 		return BookmarkDelegate.ITEM_HEIGHT;
 	}
 
-	getTemplateId(element: Bookmark | BookmarkHeader): string {
-		if (element instanceof Bookmark) {
+	getTemplateId(element: Directory | BookmarkHeader): string {
+		if (element instanceof Directory) {
 			return BookmarkRenderer.ID;
 		}
 
@@ -77,103 +54,24 @@ class BookmarkDelegate implements IListVirtualDelegate<Bookmark | BookmarkHeader
 	}
 }
 
-interface IBookmarkTemplateData {
-	bookmarkContainer: HTMLElement;
-	label: IResourceLabel;
-	elementDisposable: IDisposable;
-}
-
 interface IBookmarkHeaderTemplateData {
 	headerContainer: HTMLElement;
 	elementDisposable: IDisposable;
 }
 
-class BookmarkElementIconRenderer implements IDisposable {
-	private _focusIcon!: HTMLElement;
-
-	constructor(private readonly container: HTMLElement,
-		private readonly stat: URI,
-		@IExplorerService private readonly explorerService: IExplorerService) {
-		this.renderFocusIcon();
-		this.addListeners();
-	}
-
-	get focusIcon(): HTMLElement {
-		return this._focusIcon;
-	}
-
-	private showIcon = () => {
-		this._focusIcon.style.visibility = 'visible';
-	};
-
-	private hideIcon = () => {
-		this._focusIcon.style.visibility = 'hidden';
-	};
-
-	private select = async () => {
-		await this.explorerService.select(this.stat, true);	// Should also expand directory
-	};
-
-	private setRoot = () => {
-		this.explorerService.setRoot(this.stat);
-	};
-
-	private addListeners(): void {
-		this.container.addEventListener('mouseover', this.showIcon);
-		this.container.addEventListener('mouseout', this.hideIcon);
-		this.container.addEventListener('dblclick', this.select);
-		this._focusIcon.addEventListener('click', this.setRoot);
-	}
-
-	private renderFocusIcon(): void {
-		this._focusIcon = document.createElement('img');
-		this._focusIcon.className = 'scope-tree-focus-icon-near-bookmark';
-		this.container.insertBefore(this._focusIcon, this.container.firstChild);
-	}
-
-	dispose(): void {
-		this._focusIcon.remove();
-		// Listeners need to be removed because container (templateData.label.element) is not removed from the DOM.
-		this.container.removeEventListener('mouseover', this.showIcon);
-		this.container.removeEventListener('mouseout', this.hideIcon);
-		this.container.removeEventListener('dblclick', this.select);
-		this._focusIcon.removeEventListener('click', this.setRoot);
-	}
-}
-
-class BookmarkRenderer implements ITreeRenderer<Bookmark, FuzzyScore, IBookmarkTemplateData> {
+class BookmarkRenderer extends DirectoryRenderer {
 	static readonly ID = 'BookmarkRenderer';
-
-	constructor(
-		private labels: ResourceLabels,
-		private readonly explorerService: IExplorerService
-	) { }
 
 	get templateId() {
 		return BookmarkRenderer.ID;
 	}
 
-	renderTemplate(container: HTMLElement): IBookmarkTemplateData {
-		const label = this.labels.create(container, { supportHighlights: true });
-		const bookmarkContainer = DOM.append(container, document.createElement('div'));
-		return { bookmarkContainer: bookmarkContainer, label: label, elementDisposable: Disposable.None };
-	}
-
-	renderElement(element: ITreeNode<Bookmark, FuzzyScore>, index: number, templateData: IBookmarkTemplateData, height: number | undefined): void {
+	renderElement(element: ITreeNode<Directory, FuzzyScore>, index: number, templateData: IDirectoryTemplateData, height: number | undefined): void {
 		templateData.elementDisposable.dispose();
 		templateData.elementDisposable = this.renderBookmark(element.element, templateData, element.filterData);
 	}
 
-	disposeTemplate(templateData: IBookmarkTemplateData): void {
-		templateData.elementDisposable.dispose();
-		templateData.label.dispose();
-	}
-
-	disposeElement(element: ITreeNode<Bookmark, FuzzyScore>, index: number, templateData: IBookmarkTemplateData, height: number | undefined): void {
-		templateData.elementDisposable.dispose();
-	}
-
-	private renderBookmark(bookmark: Bookmark, templateData: IBookmarkTemplateData, filterData: FuzzyScore | undefined): IDisposable {
+	private renderBookmark(bookmark: Directory, templateData: IDirectoryTemplateData, filterData: FuzzyScore | undefined): IDisposable {
 		templateData.label.setResource({
 			resource: bookmark.resource,
 			name: bookmark.getName(),
@@ -182,7 +80,7 @@ class BookmarkRenderer implements ITreeRenderer<Bookmark, FuzzyScore, IBookmarkT
 			matches: createMatches(filterData)
 		});
 
-		return new BookmarkElementIconRenderer(templateData.label.element, bookmark.resource, this.explorerService);
+		return new DirectoryElementIconRenderer(templateData.label.element, bookmark.resource, this.explorerService);
 	}
 }
 
@@ -250,13 +148,13 @@ export class BookmarksView extends ViewPane {
 	static readonly NAME = 'Bookmarks';
 
 	private labels!: ResourceLabels;
-	private tree!: WorkbenchObjectTree<Bookmark | BookmarkHeader, FuzzyScore>;
+	private tree!: WorkbenchObjectTree<Directory | BookmarkHeader, FuzzyScore>;
 
 	private globalBookmarksHeader = new BookmarkHeader(BookmarkType.GLOBAL);
 	private workspaceBookmarksHeader = new BookmarkHeader(BookmarkType.WORKSPACE);
 
-	private globalBookmarks: ITreeElement<Bookmark>[] = [];
-	private workspaceBookmarks: ITreeElement<Bookmark>[] = [];
+	private globalBookmarks: ITreeElement<Directory>[] = [];
+	private workspaceBookmarks: ITreeElement<Directory>[] = [];
 
 	private contributedContextMenu!: IMenu;
 
@@ -280,7 +178,7 @@ export class BookmarksView extends ViewPane {
 		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
 
 		this.labels = this.instantiationService.createInstance(ResourceLabels, { onDidChangeVisibility: this.onDidChangeBodyVisibility });
-		this._register(this.bookmarksManager.onAddedBookmark(e => {
+		this._register(this.bookmarksManager.onBookmarksChanged(e => {
 			const resource = e.uri;
 			const prevScope = e.prevBookmarkType;
 			const newScope = e.bookmarkType;
@@ -329,8 +227,8 @@ export class BookmarksView extends ViewPane {
 		this.tree.setChildren(this.workspaceBookmarksHeader, this.workspaceBookmarks);
 	}
 
-	private createTree(container: HTMLElement): WorkbenchObjectTree<Bookmark | BookmarkHeader, FuzzyScore> {
-		return <WorkbenchObjectTree<Bookmark | BookmarkHeader, FuzzyScore>>this.instantiationService.createInstance(
+	private createTree(container: HTMLElement): WorkbenchObjectTree<Directory | BookmarkHeader, FuzzyScore> {
+		return <WorkbenchObjectTree<Directory | BookmarkHeader, FuzzyScore>>this.instantiationService.createInstance(
 			WorkbenchObjectTree,
 			'BookmarksPane',
 			container,
@@ -338,8 +236,8 @@ export class BookmarksView extends ViewPane {
 			[new BookmarkRenderer(this.labels, this.explorerService), new BookmarkHeaderRenderer()],
 			{
 				accessibilityProvider: {
-					getAriaLabel(element: Bookmark | BookmarkHeader): string {
-						if (element instanceof Bookmark) {
+					getAriaLabel(element: Directory | BookmarkHeader): string {
+						if (element instanceof Directory) {
 							return element.resource.toString();
 						}
 
@@ -354,7 +252,7 @@ export class BookmarksView extends ViewPane {
 			});
 	}
 
-	private onContextMenu(e: ITreeContextMenuEvent<Bookmark | BookmarkHeader | null>): void {
+	private onContextMenu(e: ITreeContextMenuEvent<Directory | BookmarkHeader | null>): void {
 		if (!e.element) {
 			return;
 		}
@@ -376,7 +274,7 @@ export class BookmarksView extends ViewPane {
 		});
 	}
 
-	private sortBookmarksByName(bookmarks: ITreeElement<Bookmark>[]): ITreeElement<Bookmark>[] {
+	private sortBookmarksByName(bookmarks: ITreeElement<Directory>[]): ITreeElement<Directory>[] {
 		return bookmarks.sort((bookmark1, bookmark2) => {
 			const compareNames = bookmark1.element.getName().localeCompare(bookmark2.element.getName());
 
@@ -385,16 +283,16 @@ export class BookmarksView extends ViewPane {
 		});
 	}
 
-	private sortBookmarksByDate(bookmarks: ITreeElement<Bookmark>[]): ITreeElement<Bookmark>[] {
+	private sortBookmarksByDate(bookmarks: ITreeElement<Directory>[]): ITreeElement<Directory>[] {
 		// Order has to be revesed when bookmarks are sorted by date because bookmarksManager keeps the most recent at the end of the array
 		return bookmarks.reverse();
 	}
 
-	private getBookmarksTreeElements(rawBookmarks: Set<string>, sortType: SortType): ITreeElement<Bookmark>[] {
-		const unsortedTreeElements: ITreeElement<Bookmark>[] = [];
+	private getBookmarksTreeElements(rawBookmarks: Set<string>, sortType: SortType): ITreeElement<Directory>[] {
+		const unsortedTreeElements: ITreeElement<Directory>[] = [];
 		rawBookmarks.forEach(bookmark => {
 			unsortedTreeElements.push({
-				element: new Bookmark(bookmark)
+				element: new Directory(bookmark)
 			});
 		});
 		return sortType === SortType.NAME ? this.sortBookmarksByName(unsortedTreeElements) : this.sortBookmarksByDate(unsortedTreeElements);
@@ -416,14 +314,14 @@ export class BookmarksView extends ViewPane {
 		}
 
 		if (scope === BookmarkType.WORKSPACE) {
-			this.workspaceBookmarks.splice(resourceIndex, 0, { element: new Bookmark(resourceAsString) });
+			this.workspaceBookmarks.splice(resourceIndex, 0, { element: new Directory(resourceAsString) });
 			if (this.workspaceBookmarksHeader.expanded) {
 				this.tree.setChildren(this.workspaceBookmarksHeader, this.workspaceBookmarks);
 			}
 		}
 
 		if (scope === BookmarkType.GLOBAL) {
-			this.globalBookmarks.splice(resourceIndex, 0, { element: new Bookmark(resourceAsString) });
+			this.globalBookmarks.splice(resourceIndex, 0, { element: new Directory(resourceAsString) });
 			if (this.globalBookmarksHeader.expanded) {
 				this.tree.setChildren(this.globalBookmarksHeader, this.globalBookmarks);
 			}
@@ -465,9 +363,9 @@ export class BookmarksView extends ViewPane {
 	}
 }
 
-class BookmarkKeyboardNavigationLabelProvider implements IKeyboardNavigationLabelProvider<Bookmark | BookmarkHeader> {
-	getKeyboardNavigationLabel(element: Bookmark | BookmarkHeader): string | undefined {
-		if (element instanceof Bookmark) {
+class BookmarkKeyboardNavigationLabelProvider implements IKeyboardNavigationLabelProvider<Directory | BookmarkHeader> {
+	getKeyboardNavigationLabel(element: Directory | BookmarkHeader): string | undefined {
+		if (element instanceof Directory) {
 			return element.getName();
 		}
 
