@@ -6,7 +6,7 @@
 import * as nls from 'vs/nls';
 import { URI } from 'vs/base/common/uri';
 import * as perf from 'vs/base/common/performance';
-import { IAction, WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification } from 'vs/base/common/actions';
+import { IAction, WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification, Action } from 'vs/base/common/actions';
 import { memoize } from 'vs/base/common/decorators';
 import { IFilesConfiguration, ExplorerFolderContext, FilesExplorerFocusedContext, ExplorerFocusedContext, ExplorerRootContext, ExplorerResourceReadonlyContext, IExplorerService, ExplorerResourceCut, ExplorerResourceMoveableToTrash, ExplorerCompressedFocusContext, ExplorerCompressedFirstFocusContext, ExplorerCompressedLastFocusContext, ExplorerResourceAvailableEditorIdsContext } from 'vs/workbench/contrib/files/common/files';
 import { NewFolderAction, NewFileAction, FileCopiedContext, RefreshExplorerView, CollapseExplorerView } from 'vs/workbench/contrib/files/browser/fileActions';
@@ -57,6 +57,7 @@ import { dirname, basename } from 'vs/base/common/resources';
 import { Codicon } from 'vs/base/common/codicons';
 import 'vs/css!./media/treeNavigation';
 import { IBookmarksManager } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
+import { ICommandService } from 'vs/platform/commands/common/commands';
 
 interface IExplorerViewColors extends IColorMapping {
 	listDropBackground?: ColorValue | undefined;
@@ -120,6 +121,23 @@ export function getContext(focus: ExplorerItem[], selection: ExplorerItem[], res
 	}
 
 	return [focusedStat];
+}
+
+class ToggleBookmark extends Action {
+	static readonly ID = 'workbench.explorer.action.toggleBookmarkSomething';
+	static readonly LABEL = 'Add/Toggle bookmark';
+
+	constructor(
+		@ICommandService private commandService: ICommandService
+	) {
+		super('explorer.toggleBookmarksSomething', ToggleBookmark.LABEL);
+		this.class = Codicon.star.classNames;
+	}
+
+	run(): Promise<void> {
+		this.commandService.executeCommand('toggleBookmarkType');
+		return Promise.resolve();
+	}
 }
 
 export class ExplorerView extends ViewPane {
@@ -364,24 +382,37 @@ export class ExplorerView extends ViewPane {
 
 		this._register(this.tree.onMouseOver(e => {
 			const icon = document.getElementById('iconContainer_' + e.element?.resource.toString());
+			const bookmark = document.getElementById('bookmarkIconContainer_' + e.element?.resource.toString());
 
 			if (icon !== null) {
 				icon.style.visibility = 'visible';
+			}
+			if (bookmark) {
+				bookmark.style.visibility = 'visible';
 			}
 		}));
 
 		this._register(this.tree.onMouseOut(e => {
 			const icon = document.getElementById('iconContainer_' + e.element?.resource.toString());
+			const bookmark = document.getElementById('bookmarkIconContainer_' + e.element?.resource.toString());
 
 			if (icon !== null) {
 				icon.style.visibility = 'hidden';
 			}
+			if (bookmark && e.element && !this.bookmarksManager.getBookmarkType(e.element?.resource)) {
+				bookmark.style.visibility = 'hidden';
+			}
 		}));
+
+		this.tree.onMouseDblClick(e => {
+			this.tree.updateOptions({ toggleCollapseStateOnBookmarkClick: false });
+		});
 	}
 
 	getActions(): IAction[] {
 		if (!this.actions) {
 			this.actions = [
+				this.instantiationService.createInstance(ToggleBookmark),
 				this.instantiationService.createInstance(NewFileAction),
 				this.instantiationService.createInstance(NewFolderAction),
 				this.instantiationService.createInstance(RefreshExplorerView, RefreshExplorerView.ID, RefreshExplorerView.LABEL),

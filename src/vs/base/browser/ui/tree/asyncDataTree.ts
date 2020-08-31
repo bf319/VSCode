@@ -1110,6 +1110,7 @@ export interface ICompressibleAsyncDataTreeOptions<T, TFilterData = void> extend
 
 export interface ICompressibleAsyncDataTreeOptionsUpdate extends IAsyncDataTreeOptionsUpdate {
 	readonly compressionEnabled?: boolean;
+	readonly toggleCollapseStateOnBookmarkClick?: boolean;
 }
 
 export class CompressibleAsyncDataTree<TInput, T, TFilterData = void> extends AsyncDataTree<TInput, T, TFilterData> {

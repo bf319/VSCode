@@ -270,6 +270,10 @@ class BookmarkIconRenderer implements IDisposable {
 			const newType = bookmarkManager.toggleBookmarkType(stat.resource);
 			this._iconContainer.className = bookmarkClass(newType);
 		};
+
+		if (!bookmarkManager.getBookmarkType(stat.resource)) {
+			this._iconContainer.style.visibility = 'hidden';
+		}
 	}
 
 	get iconContainer(): HTMLElement {
@@ -425,19 +429,22 @@ export class FilesRenderer implements ICompressibleTreeRenderer<ExplorerItem, Fu
 			const focusIcon = new FocusIconRenderer(stat);
 			focusIcon.iconContainer.onclick = () => this.explorerService.setRoot(stat.resource);
 
-			templateData.label.element.style.float = 'left';
-			templateData.label.element.appendChild(focusIcon.iconContainer);
-
 			disposables.add(focusIcon);
+
+			templateData.label.element.style.float = 'left';
 
 			if (this.bookmarksManager) {
 				const bookmarkIcon = new BookmarkIconRenderer(stat, this.bookmarksManager);
-				const contentContainer = this.getContentsContainerElement(templateData.label.element);
-				const rowContainer = this.getRowContainerElement(contentContainer);
+				// const contentContainer = this.getContentsContainerElement(templateData.label.element);
+				// const rowContainer = this.getRowContainerElement(contentContainer);
 
 				disposables.add(bookmarkIcon);
-				rowContainer.insertBefore(bookmarkIcon.iconContainer, contentContainer);
+				// rowContainer.insertBefore(bookmarkIcon.iconContainer, contentContainer);
+				templateData.label.element.appendChild(bookmarkIcon.iconContainer);
 			}
+
+
+			templateData.label.element.appendChild(focusIcon.iconContainer);
 		}
 
 		disposables.add(prevDisposable);
