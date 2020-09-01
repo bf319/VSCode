@@ -952,7 +952,7 @@ export interface IAbstractTreeOptionsUpdate extends ITreeRendererOptions {
 	readonly smoothScrolling?: boolean;
 	readonly horizontalScrolling?: boolean;
 	readonly expandOnlyOnDoubleClick?: boolean;
-	readonly bookmarksClasses?: string[];
+	readonly preserveCollapseStateOnTargets?: string[];
 }
 
 export interface IAbstractTreeOptions<T, TFilterData = void> extends IAbstractTreeOptionsUpdate, IListOptions<T> {
@@ -1116,7 +1116,7 @@ class TreeNodeListMouseController<T, TFilterData, TRef> extends MouseController<
 			return super.onViewPointer(e);
 		}
 
-		if (this.wasBookmarkClicked(target)) {
+		if (!this.preserveCollapseState(target)) {
 			return super.onViewPointer(e);
 		}
 
@@ -1144,18 +1144,18 @@ class TreeNodeListMouseController<T, TFilterData, TRef> extends MouseController<
 		super.onDoubleClick(e);
 	}
 
-	private wasBookmarkClicked(target: HTMLElement): boolean {
-		if (!this.tree.options.bookmarksClasses) {
-			return false;
+	private preserveCollapseState(target: HTMLElement): boolean {
+		if (!this.tree.options.preserveCollapseStateOnTargets) {
+			return true;
 		}
 
-		for (let bookmarkClassName of this.tree.options.bookmarksClasses) {
+		for (let bookmarkClassName of this.tree.options.preserveCollapseStateOnTargets) {
 			if (hasClass(target, bookmarkClassName)) {
-				return true;
+				return false;
 			}
 		}
 
-		return false;
+		return true;
 	}
 }
 

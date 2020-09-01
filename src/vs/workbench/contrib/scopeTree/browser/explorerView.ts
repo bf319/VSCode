@@ -557,7 +557,7 @@ export class ExplorerView extends ViewPane {
 			}
 		}));
 
-		this.tree.updateOptions({ bookmarksClasses: allBookmarksClasses });
+		this.tree.updateOptions({ preserveCollapseStateOnTargets: allBookmarksClasses });
 
 		// save view state
 		this._register(this.storageService.onWillSaveState(() => {
