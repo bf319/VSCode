@@ -145,7 +145,8 @@ export class ExplorerService implements IExplorerService {
 	setRoot(resource: URI, fileToSelect: URI | undefined = undefined): void {
 		this.model.setRoot(resource, this.sortOrder).then(() =>
 			this.view?.setTreeInput().then(() => {
-				if (fileToSelect) {
+				// There is a file to select and the root has not changed in the meantime
+				if (fileToSelect && resource.toString() === this.roots[0].resource.toString()) {
 					this.view?.selectResource(fileToSelect);
 				}
 			}));

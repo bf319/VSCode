@@ -53,7 +53,7 @@ import { SIDE_BAR_BACKGROUND } from 'vs/workbench/common/theme';
 import { IViewDescriptorService } from 'vs/workbench/common/views';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { IUriIdentityService } from 'vs/workbench/services/uriIdentity/common/uriIdentity';
-import { dirname, basename } from 'vs/base/common/resources';
+import { dirname, basename, isEqualOrParent } from 'vs/base/common/resources';
 import { Codicon } from 'vs/base/common/codicons';
 import 'vs/css!./media/treeNavigation';
 import { IBookmarksManager } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
@@ -337,14 +337,14 @@ export class ExplorerView extends ViewPane {
 		// When the explorer viewer is loaded, listen to changes to the editor input
 		this._register(this.editorService.onDidActiveEditorChange(() => {
 			const resource = this.getActiveFile();
+			const root = (this.tree.getInput() as ExplorerItem).resource;
 			if (!resource) {
 				return;
 			}
-
-			if (this.isChildOfCurrentRoot(resource)) {
-				this.expandAncestorsToRoot(resource).then(() => this.selectActiveFile(false, true));
-			} else {
+			if (!root || !isEqualOrParent(resource, root)) {
 				this.explorerService.setRoot(dirname(resource), resource);
+			} else {
+				this.expandAncestorsAndSelect(resource);
 			}
 		}));
 
@@ -811,31 +811,13 @@ export class ExplorerView extends ViewPane {
 		return withNullAsUndefined(toResource(input, { supportSideBySide: SideBySideEditor.PRIMARY }));
 	}
 
-	private isChildOfCurrentRoot(resource: URI): boolean {
-		const currentRoot = this.tree.getInput() as ExplorerItem;
-		if (!currentRoot) {
-			return false;
-		}
-		const currentRootResource = currentRoot.resource.toString();
-
-		let remainingPath: URI = resource;
-		while (!this.isWorkspaceRoot(remainingPath)) {
-			if (remainingPath.toString() === currentRootResource) {
-				return true;
-			}
-
-			remainingPath = dirname(remainingPath);
-		}
-
-		return remainingPath.toString() === currentRootResource;
-	}
-
-	private async expandAncestorsToRoot(resource: URI): Promise<void> {
+	private async expandAncestorsAndSelect(resource: URI): Promise<void> {
 		const ancestors: URI[] = [];
 		const treeInput = this.tree.getInput() as ExplorerItem;
+		const rootResource = treeInput.resource.toString();
 		let findAncestor: URI = resource;
 
-		while (findAncestor.toString() !== treeInput.resource.toString()) {
+		while (findAncestor.toString() !== rootResource) {
 			ancestors.push(findAncestor);
 			findAncestor = dirname(findAncestor);
 		}
@@ -849,6 +831,11 @@ export class ExplorerView extends ViewPane {
 				await this.tree.expand(expandNext);
 				toExpand = expandNext;
 			}
+		}
+
+		const currentRoot = this.tree.getInput() as ExplorerItem;
+		if (rootResource === currentRoot.resource.toString()) {
+			this.selectActiveFile(/*deselect*/ false, /*reveal*/ true);
 		}
 	}
 
