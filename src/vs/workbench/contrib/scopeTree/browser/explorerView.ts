@@ -364,17 +364,25 @@ export class ExplorerView extends ViewPane {
 
 		this._register(this.tree.onMouseOver(e => {
 			const icon = document.getElementById('iconContainer_' + e.element?.resource.toString());
+			const bookmarkIconContainer = document.getElementById('bookmarkIconContainer_' + e.element?.resource.toString());
 
-			if (icon !== null) {
+			if (icon) {
 				icon.style.visibility = 'visible';
+			}
+			if (bookmarkIconContainer) {
+				bookmarkIconContainer.style.visibility = 'visible';
 			}
 		}));
 
 		this._register(this.tree.onMouseOut(e => {
 			const icon = document.getElementById('iconContainer_' + e.element?.resource.toString());
+			const bookmarkIconContainer = document.getElementById('bookmarkIconContainer_' + e.element?.resource.toString());
 
-			if (icon !== null) {
+			if (icon) {
 				icon.style.visibility = 'hidden';
+			}
+			if (bookmarkIconContainer && e.element && !this.bookmarksManager.getBookmarkType(e.element.resource)) {
+				bookmarkIconContainer.style.visibility = 'hidden';
 			}
 		}));
 	}
