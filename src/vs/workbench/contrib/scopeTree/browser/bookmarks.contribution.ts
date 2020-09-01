@@ -19,6 +19,19 @@ import { AbstractTree } from 'vs/base/browser/ui/tree/abstractTree';
 import { Directory } from 'vs/workbench/contrib/scopeTree/browser/directoryViewer';
 
 // Handlers implementations for context menu actions
+const addBookmark: ICommandHandler = (accessor: ServicesAccessor, scope: BookmarkType) => {
+	const bookmarksManager = accessor.get(IBookmarksManager);
+	const explorerService = accessor.get(IExplorerService);
+	const stats = explorerService.getContext(true);	// respectMultiSelection
+
+	for (let stat of stats) {
+		if (stat.isDirectory) {
+			bookmarksManager.addBookmark(stat.resource, scope);
+			toggleIconIfVisible(stat.resource, scope);
+		}
+	}
+};
+
 const changeFileExplorerRoot: ICommandHandler = (accessor: ServicesAccessor, element: Directory) => {
 	const explorerService = accessor.get(IExplorerService);
 	const listService = accessor.get(IListService);
@@ -62,8 +75,8 @@ const sortBookmarksByDate: ICommandHandler = (accessor: ServicesAccessor) => {
 	accessor.get(IBookmarksManager).sortBookmarks(SortType.DATE);
 };
 
-const displayBookmarkInFileTree: ICommandHandler = (accessor: ServicesAccessor, element: Bookmark | BookmarkHeader) => {
-	if (element && element instanceof Bookmark) {
+const displayBookmarkInFileTree: ICommandHandler = (accessor: ServicesAccessor, element: Directory | BookmarkHeader) => {
+	if (element && element instanceof Directory) {
 		accessor.get(IExplorerService).select(element.resource);
 	}
 };
@@ -137,7 +150,38 @@ MenuRegistry.appendMenuItem(MenuId.DisplayBookmarksContext, {
 	}
 });
 
+// Add commands in explorer context menu
+MenuRegistry.appendMenuItem(MenuId.ExplorerContext, {
+	group: '51_add_bookmark',
+	order: 10,
+	command: {
+		id: 'addGlobalBookmark',
+		title: 'Add global bookmark'
+	}
+});
+
+MenuRegistry.appendMenuItem(MenuId.ExplorerContext, {
+	group: '51_add_bookmark',
+	order: 20,
+	command: {
+		id: 'addWorkspaceBookmark',
+		title: 'Add workspace bookmark'
+	}
+});
+
 // Register commands
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+	id: 'addGlobalBookmark',
+	weight: KeybindingWeight.WorkbenchContrib,
+	handler: (accessor: ServicesAccessor) => addBookmark(accessor, BookmarkType.GLOBAL)
+});
+
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+	id: 'addWorkspaceBookmark',
+	weight: KeybindingWeight.WorkbenchContrib,
+	handler: (accessor: ServicesAccessor) => addBookmark(accessor, BookmarkType.WORKSPACE)
+});
+
 KeybindingsRegistry.registerCommandAndKeybindingRule({
 	id: 'removeBookmark',
 	weight: KeybindingWeight.WorkbenchContrib,
