@@ -56,7 +56,7 @@ import { IUriIdentityService } from 'vs/workbench/services/uriIdentity/common/ur
 import { dirname, basename } from 'vs/base/common/resources';
 import { Codicon } from 'vs/base/common/codicons';
 import 'vs/css!./media/treeNavigation';
-import { IBookmarksManager } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
+import { IBookmarksManager, allBookmarksClasses } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
 
 interface IExplorerViewColors extends IColorMapping {
 	listDropBackground?: ColorValue | undefined;
@@ -556,6 +556,8 @@ export class ExplorerView extends ViewPane {
 				}
 			}
 		}));
+
+		this.tree.updateOptions({ bookmarksClasses: allBookmarksClasses });
 
 		// save view state
 		this._register(this.storageService.onWillSaveState(() => {

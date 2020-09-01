@@ -952,6 +952,7 @@ export interface IAbstractTreeOptionsUpdate extends ITreeRendererOptions {
 	readonly smoothScrolling?: boolean;
 	readonly horizontalScrolling?: boolean;
 	readonly expandOnlyOnDoubleClick?: boolean;
+	readonly bookmarksClasses?: string[];
 }
 
 export interface IAbstractTreeOptions<T, TFilterData = void> extends IAbstractTreeOptionsUpdate, IListOptions<T> {
@@ -1115,6 +1116,10 @@ class TreeNodeListMouseController<T, TFilterData, TRef> extends MouseController<
 			return super.onViewPointer(e);
 		}
 
+		if (this.wasBookmarkClicked(target)) {
+			return super.onViewPointer(e);
+		}
+
 		if (node.collapsible) {
 			const model = ((this.tree as any).model as ITreeModel<T, TFilterData, TRef>); // internal
 			const location = model.getNodeLocation(node);
@@ -1137,6 +1142,20 @@ class TreeNodeListMouseController<T, TFilterData, TRef> extends MouseController<
 		}
 
 		super.onDoubleClick(e);
+	}
+
+	private wasBookmarkClicked(target: HTMLElement): boolean {
+		if (!this.tree.options.bookmarksClasses) {
+			return false;
+		}
+
+		for (let bookmarkClassName of this.tree.options.bookmarksClasses) {
+			if (hasClass(target, bookmarkClassName)) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }
 
