@@ -275,8 +275,6 @@ class BookmarkIconRenderer implements IDisposable {
 		if (!bookmarkType) {
 			this._iconContainer.style.visibility = 'hidden';
 		}
-
-		this._iconContainer.style.paddingRight = '0px';
 	}
 
 	get iconContainer(): HTMLElement {
