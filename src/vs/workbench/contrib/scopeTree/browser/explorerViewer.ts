@@ -397,7 +397,6 @@ export class FilesRenderer implements ICompressibleTreeRenderer<ExplorerItem, Fu
 
 	private renderStat(stat: ExplorerItem, label: string | string[], domId: string | undefined, filterData: FuzzyScore | undefined, templateData: IFileTemplateData): IDisposable {
 		templateData.label.element.style.display = 'flex';
-		templateData.label.element.style.float = '';
 		const extraClasses = ['explorer-item'];
 		if (this.explorerService.isCut(stat)) {
 			extraClasses.push('cut');
@@ -421,24 +420,25 @@ export class FilesRenderer implements ICompressibleTreeRenderer<ExplorerItem, Fu
 			}
 		});
 
-		if (stat.isDirectory) {
-			const focusIcon = new FocusIconRenderer(stat);
-			focusIcon.iconContainer.onclick = () => this.explorerService.setRoot(stat.resource);
+		// if (stat.isDirectory) {
+		const focusIcon = new FocusIconRenderer(stat);
+		focusIcon.iconContainer.onclick = () => this.explorerService.setRoot(stat.resource);
 
-			templateData.label.element.style.float = 'left';
-			templateData.label.element.appendChild(focusIcon.iconContainer);
+		// templateData.label.element.appendChild(focusIcon.iconContainer);
 
-			disposables.add(focusIcon);
+		disposables.add(focusIcon);
 
-			if (this.bookmarksManager) {
-				const bookmarkIcon = new BookmarkIconRenderer(stat, this.bookmarksManager);
-				const contentContainer = this.getContentsContainerElement(templateData.label.element);
-				const rowContainer = this.getRowContainerElement(contentContainer);
+		if (this.bookmarksManager) {
+			const bookmarkIcon = new BookmarkIconRenderer(stat, this.bookmarksManager);
+			const contentContainer = this.getContentsContainerElement(templateData.label.element);
+			const rowContainer = this.getRowContainerElement(contentContainer);
 
-				disposables.add(bookmarkIcon);
-				rowContainer.insertBefore(bookmarkIcon.iconContainer, contentContainer);
-			}
+			disposables.add(bookmarkIcon);
+			// rowContainer.insertBefore(bookmarkIcon.iconContainer, contentContainer);
+			rowContainer.insertBefore(bookmarkIcon.iconContainer, contentContainer.nextSibling);
+			rowContainer.insertBefore(focusIcon.iconContainer, rowContainer.firstChild);
 		}
+		// }
 
 		disposables.add(prevDisposable);
 		return disposables;

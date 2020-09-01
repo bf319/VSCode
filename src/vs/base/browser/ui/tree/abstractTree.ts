@@ -348,8 +348,8 @@ class TreeRenderer<T, TFilterData, TRef, TTemplateData> implements IListRenderer
 		}
 
 		const indent = TreeRenderer.DefaultIndent + (node.depth - 1) * this.indent;
-		templateData.twistie.style.paddingLeft = `${indent}px`;
-		templateData.indent.style.width = `${indent + this.indent - 16}px`;
+		templateData.twistie.style.paddingLeft = `${indent - 8}px`;
+		templateData.indent.style.width = `${indent + this.indent - 16}px`;	// With visibility hidden these don't appear anymore
 
 		this.renderTwistie(node, templateData);
 

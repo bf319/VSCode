@@ -8,6 +8,7 @@
 	float: left;
 	align-self: center;
 	visibility: hidden;
-	display: flex;
-	padding-left: 10px;
+	/* display: flex; */
+	width: 16px;
+	/* padding-left: 10px; */
 }
