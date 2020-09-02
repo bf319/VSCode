@@ -272,7 +272,7 @@ class EventCollection<T> implements Collection<T> {
 
 class TreeRenderer<T, TFilterData, TRef, TTemplateData> implements IListRenderer<ITreeNode<T, TFilterData>, ITreeListTemplateData<TTemplateData>> {
 
-	private static readonly DefaultIndent = 8;
+	protected static readonly DefaultIndent = 8;
 
 	readonly templateId: string;
 	private renderedElements = new Map<T, ITreeNode<T, TFilterData>>();
@@ -348,7 +348,7 @@ class TreeRenderer<T, TFilterData, TRef, TTemplateData> implements IListRenderer
 		}
 
 		const indent = TreeRenderer.DefaultIndent + (node.depth - 1) * this.indent;
-		templateData.twistie.style.paddingLeft = `${indent - 8}px`;
+		templateData.twistie.style.paddingLeft = `${indent}px`;
 		templateData.indent.style.width = `${indent + this.indent - 16}px`;
 
 		this.renderTwistie(node, templateData);
@@ -458,7 +458,6 @@ class TreeRenderer<T, TFilterData, TRef, TTemplateData> implements IListRenderer
 			node = parent;
 		}
 
-		templateData.indent.style.paddingLeft = '8px';
 		templateData.indentGuidesDisposable = disposableStore;
 	}
 
@@ -505,6 +504,16 @@ class TreeRenderer<T, TFilterData, TRef, TTemplateData> implements IListRenderer
 		this.renderedElements.clear();
 		this.indentGuidesDisposable.dispose();
 		dispose(this.disposables);
+	}
+}
+
+class TreeRendererWithIndent<T, TFilterData, TRef, TTemplateData> extends TreeRenderer<T, TFilterData, TRef, TTemplateData>{
+	renderElement(node: ITreeNode<T, TFilterData>, index: number, templateData: ITreeListTemplateData<TTemplateData>, height: number | undefined): void {
+		super.renderElement(node, index, templateData, height);
+
+		const paddingLeft = parseInt(templateData.twistie.style.paddingLeft);
+		templateData.twistie.style.paddingLeft = `${paddingLeft - TreeRenderer.DefaultIndent}px`;
+		templateData.indent.style.paddingLeft = `${TreeRenderer.DefaultIndent}px`;
 	}
 }
 
@@ -1276,7 +1285,14 @@ export abstract class AbstractTree<T, TFilterData, TRef> implements IDisposable 
 		const onDidChangeCollapseStateRelay = new Relay<ICollapseStateChangeEvent<T, TFilterData>>();
 		const onDidChangeActiveNodes = new Relay<ITreeNode<T, TFilterData>[]>();
 		const activeNodes = new EventCollection(onDidChangeActiveNodes.event);
-		this.renderers = renderers.map(r => new TreeRenderer<T, TFilterData, TRef, any>(r, () => this.model, onDidChangeCollapseStateRelay.event, activeNodes, _options));
+		this.renderers = renderers.map(r => {
+			if (r.templateId === 'file') {
+				return (new TreeRendererWithIndent<T, TFilterData, TRef, any>(r, () => this.model, onDidChangeCollapseStateRelay.event, activeNodes, _options));
+			}
+			else {
+				return (new TreeRenderer<T, TFilterData, TRef, any>(r, () => this.model, onDidChangeCollapseStateRelay.event, activeNodes, _options));
+			}
+		});
 		for (let r of this.renderers) {
 			this.disposables.add(r);
 		}
