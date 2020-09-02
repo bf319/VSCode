@@ -45,3 +45,5 @@ export function bookmarkClass(type: BookmarkType): string {
 
 	return 'bookmark-not-set';
 }
+
+export const allBookmarksClasses = [bookmarkClass(BookmarkType.NONE), bookmarkClass(BookmarkType.WORKSPACE), bookmarkClass(BookmarkType.GLOBAL)];
