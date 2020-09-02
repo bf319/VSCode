@@ -41,6 +41,7 @@ import { isMacintosh } from 'vs/base/common/platform';
 import { Codicon } from 'vs/base/common/codicons';
 import { BookmarksView } from 'vs/workbench/contrib/scopeTree/browser/bookmarksView';
 import { RecentDirectoriesView } from 'vs/workbench/contrib/scopeTree/browser/recentDirectoriesView';
+import { BlueprintsView } from 'vs/workbench/contrib/scopeTree/browser/blueprintsView';
 
 export class ExplorerViewletViewsContribution extends Disposable implements IWorkbenchContribution {
 
@@ -85,6 +86,11 @@ export class ExplorerViewletViewsContribution extends Disposable implements IWor
 		const recentDirectoriesDescriptor = this.createRecentDirectoriesDescriptor();
 		if (!viewDescriptors.some(v => v.id === recentDirectoriesDescriptor.id)) {
 			viewDescriptorsToRegister.push(recentDirectoriesDescriptor);
+		}
+
+		const blueprintsDescriptor = this.createBlueprintDescriptor();
+		if (!viewDescriptors.some(v => v.id === blueprintsDescriptor.id)) {
+			viewDescriptorsToRegister.push(blueprintsDescriptor);
 		}
 
 		const explorerViewDescriptor = this.createExplorerViewDescriptor();
@@ -179,6 +185,16 @@ export class ExplorerViewletViewsContribution extends Disposable implements IWor
 			name: RecentDirectoriesView.NAME,
 			ctorDescriptor: new SyncDescriptor(RecentDirectoriesView),
 			order: 3,
+			canToggleVisibility: true
+		};
+	}
+
+	private createBlueprintDescriptor(): IViewDescriptor {
+		return {
+			id: BlueprintsView.ID,
+			name: BlueprintsView.NAME,
+			ctorDescriptor: new SyncDescriptor(BlueprintsView),
+			order: 4,
 			canToggleVisibility: true
 		};
 	}
