@@ -831,6 +831,11 @@ export class ExplorerView extends ViewPane {
 				await this.tree.expand(expandNext);
 				toExpand = expandNext;
 			}
+
+			const currentRoot = this.tree.getInput() as ExplorerItem;
+			if (rootResource !== currentRoot.resource.toString()) {
+				return;
+			}
 		}
 
 		const currentRoot = this.tree.getInput() as ExplorerItem;
