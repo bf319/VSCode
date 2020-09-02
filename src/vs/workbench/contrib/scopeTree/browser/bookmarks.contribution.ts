@@ -22,7 +22,7 @@ import { Directory } from 'vs/workbench/contrib/scopeTree/browser/directoryViewe
 const addBookmark: ICommandHandler = (accessor: ServicesAccessor, scope: BookmarkType) => {
 	const bookmarksManager = accessor.get(IBookmarksManager);
 	const explorerService = accessor.get(IExplorerService);
-	const stats = explorerService.getContext(true);	// respectMultiSelection
+	const stats = explorerService.getContext(/*respectMultiSelection = */ true);
 
 	for (let stat of stats) {
 		if (stat.isDirectory) {
