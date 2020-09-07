@@ -74,9 +74,8 @@ export class ExplorerService implements IExplorerService {
 		}));
 		this.disposables.add(this.model.onDidChangeRoots(() => {
 			if (this.view) {
-				this.view.setTreeInput();
+				this.view.setTreeInput().then(() => this._onDidChangeRoot.fire());
 			}
-			this._onDidChangeRoot.fire();
 		}));
 	}
 
@@ -143,8 +142,14 @@ export class ExplorerService implements IExplorerService {
 		return !!this.cutItems && this.cutItems.indexOf(item) >= 0;
 	}
 
-	setRoot(resource: URI): void {
-		this.model.setRoot(resource, this.sortOrder);
+	setRoot(resource: URI, fileToSelect: URI | undefined = undefined): void {
+		this.model.setRoot(resource, this.sortOrder).then(() =>
+			this.view?.setTreeInput().then(() => {
+				// There is a file to select and the root has not changed in the meantime
+				if (fileToSelect && resource.toString() === this.roots[0].resource.toString()) {
+					this.view?.selectResource(fileToSelect);
+				}
+			}));
 	}
 
 	getEditable(): { stat: ExplorerItem, data: IEditableData } | undefined {

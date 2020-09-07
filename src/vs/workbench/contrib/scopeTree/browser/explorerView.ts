@@ -53,7 +53,7 @@ import { SIDE_BAR_BACKGROUND } from 'vs/workbench/common/theme';
 import { IViewDescriptorService } from 'vs/workbench/common/views';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { IUriIdentityService } from 'vs/workbench/services/uriIdentity/common/uriIdentity';
-import { dirname, basename } from 'vs/base/common/resources';
+import { dirname, basename, isEqualOrParent } from 'vs/base/common/resources';
 import { Codicon } from 'vs/base/common/codicons';
 import 'vs/css!./media/treeNavigation';
 import { IBookmarksManager, allBookmarksClasses } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
@@ -336,7 +336,16 @@ export class ExplorerView extends ViewPane {
 
 		// When the explorer viewer is loaded, listen to changes to the editor input
 		this._register(this.editorService.onDidActiveEditorChange(() => {
-			this.selectActiveFile();
+			const resource = this.getActiveFile();
+			const root = (this.tree.getInput() as ExplorerItem).resource;
+			if (!resource) {
+				return;
+			}
+			if (!root || !isEqualOrParent(resource, root)) {
+				this.explorerService.setRoot(dirname(resource), resource);
+			} else {
+				this.expandAncestorsAndSelect(resource);
+			}
 		}));
 
 		// Also handle configuration updates
@@ -802,6 +811,41 @@ export class ExplorerView extends ViewPane {
 
 		// check for files
 		return withNullAsUndefined(toResource(input, { supportSideBySide: SideBySideEditor.PRIMARY }));
+	}
+
+	private async expandAncestorsAndSelect(resource: URI): Promise<void> {
+		const ancestors: URI[] = [];
+		const treeInput = this.tree.getInput() as ExplorerItem;
+		const rootResource = treeInput.resource.toString();
+		let ancestor: URI = resource;
+
+		while (ancestor.toString() !== rootResource) {
+			ancestors.push(ancestor);
+			ancestor = dirname(ancestor);
+		}
+
+		ancestors.reverse();
+
+		let toExpand = treeInput;
+		for (let i = 0; i < ancestors.length; i++) {
+			const expandNext = toExpand.getChild(basename(ancestors[i]));
+			if (!expandNext) {
+				return;
+			}
+
+			await this.tree.expand(expandNext);
+			toExpand = expandNext;
+
+			const currentRoot = this.tree.getInput() as ExplorerItem;
+			if (rootResource !== currentRoot.resource.toString()) {
+				return;
+			}
+		}
+
+		const currentRoot = this.tree.getInput() as ExplorerItem;
+		if (rootResource === currentRoot.resource.toString()) {
+			this.selectResource(resource);
+		}
 	}
 
 	public async selectResource(resource: URI | undefined, reveal = this.autoReveal, retry = 0): Promise<void> {
