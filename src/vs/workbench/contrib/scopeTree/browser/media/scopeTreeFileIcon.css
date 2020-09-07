@@ -7,7 +7,6 @@
 	content: url('scope.svg');
 	float: left;
 	align-self: center;
+	width: 16px;
 	visibility: hidden;
-	display: flex;
-	padding-left: 10px;
 }

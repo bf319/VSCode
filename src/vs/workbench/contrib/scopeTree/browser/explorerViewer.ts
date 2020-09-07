@@ -265,11 +265,16 @@ class BookmarkIconRenderer implements IDisposable {
 	constructor(stat: ExplorerItem, bookmarkManager: IBookmarksManager) {
 		this._iconContainer = document.createElement('img');
 		this._iconContainer.id = 'bookmarkIconContainer_' + stat.resource.toString();
-		this._iconContainer.className = bookmarkClass(bookmarkManager.getBookmarkType(stat.resource));
 		this._iconContainer.onclick = () => {
 			const newType = bookmarkManager.toggleBookmarkType(stat.resource);
 			this._iconContainer.className = bookmarkClass(newType);
 		};
+
+		const bookmarkType = bookmarkManager.getBookmarkType(stat.resource);
+		this._iconContainer.className = bookmarkClass(bookmarkType);
+		if (!bookmarkType) {
+			this._iconContainer.style.visibility = 'hidden';
+		}
 	}
 
 	get iconContainer(): HTMLElement {
@@ -421,25 +426,26 @@ export class FilesRenderer implements ICompressibleTreeRenderer<ExplorerItem, Fu
 			}
 		});
 
+		const focusIcon = new FocusIconRenderer(stat);
+		const contentContainer = this.getContentsContainerElement(templateData.label.element);
+		const rowContainer = this.getRowContainerElement(contentContainer);
+		rowContainer.insertBefore(focusIcon.iconContainer, rowContainer.firstChild);
+
 		if (stat.isDirectory) {
-			const focusIcon = new FocusIconRenderer(stat);
 			focusIcon.iconContainer.onclick = () => this.explorerService.setRoot(stat.resource);
-
-			templateData.label.element.style.float = 'left';
-			templateData.label.element.appendChild(focusIcon.iconContainer);
-
-			disposables.add(focusIcon);
 
 			if (this.bookmarksManager) {
 				const bookmarkIcon = new BookmarkIconRenderer(stat, this.bookmarksManager);
-				const contentContainer = this.getContentsContainerElement(templateData.label.element);
-				const rowContainer = this.getRowContainerElement(contentContainer);
+				bookmarkIcon.iconContainer.style.paddingRight = '10px';
 
+				templateData.label.element.appendChild(bookmarkIcon.iconContainer);
 				disposables.add(bookmarkIcon);
-				rowContainer.insertBefore(bookmarkIcon.iconContainer, contentContainer);
 			}
+		} else {
+			focusIcon.iconContainer.style.opacity = '0';
 		}
 
+		disposables.add(focusIcon);
 		disposables.add(prevDisposable);
 		return disposables;
 	}
