@@ -98,7 +98,7 @@ const handleBookmarksChange = (accessor: ServicesAccessor, element: Directory, n
 	toggleIconIfVisible(resource, newScope);
 };
 
-const findSelectedResourceInExplorer = (accessor: ServicesAccessor): URI | undefined => {
+const findResourceSelectedInExplorer = (accessor: ServicesAccessor): URI | undefined => {
 	const listService = accessor.get(IListService);
 	const editorService = accessor.get(IEditorService);
 	const explorerService = accessor.get(IExplorerService);
@@ -292,7 +292,7 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 	handler: (accessor: ServicesAccessor) => {
 		const bookmarksManager = accessor.get(IBookmarksManager);
 		const fileService = accessor.get(IFileService);
-		const selectedResource = findSelectedResourceInExplorer(accessor);
+		const selectedResource = findResourceSelectedInExplorer(accessor);
 
 		if (selectedResource) {
 			fileService.readFile(selectedResource).then(blueprintsRaw => {
