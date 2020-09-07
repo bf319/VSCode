@@ -116,7 +116,8 @@ export class MemFS implements FileSystemProvider, FileSearchProvider, TextSearch
 		let selectedNumbers: Set<number> = new Set();
 
 		while (selectedNumbers.size < size) {
-			const numberSelected = Math.floor(Math.random() * indexMax);
+			// const numberSelected = Math.floor(Math.random() * indexMax);
+			const numberSelected = selectedNumbers.size;
 			selectedNumbers.add(numberSelected);
 		}
 
