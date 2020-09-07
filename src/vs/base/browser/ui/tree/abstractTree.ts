@@ -1285,14 +1285,7 @@ export abstract class AbstractTree<T, TFilterData, TRef> implements IDisposable 
 		const onDidChangeCollapseStateRelay = new Relay<ICollapseStateChangeEvent<T, TFilterData>>();
 		const onDidChangeActiveNodes = new Relay<ITreeNode<T, TFilterData>[]>();
 		const activeNodes = new EventCollection(onDidChangeActiveNodes.event);
-		this.renderers = renderers.map(r => {
-			if (r.templateId === 'file') {
-				return (new TreeRendererWithIndent<T, TFilterData, TRef, any>(r, () => this.model, onDidChangeCollapseStateRelay.event, activeNodes, _options));
-			}
-			else {
-				return (new TreeRenderer<T, TFilterData, TRef, any>(r, () => this.model, onDidChangeCollapseStateRelay.event, activeNodes, _options));
-			}
-		});
+		this.renderers = renderers.map(r => this.createTreeRenderer(r, onDidChangeCollapseStateRelay, activeNodes, _options));
 		for (let r of this.renderers) {
 			this.disposables.add(r);
 		}
@@ -1711,6 +1704,15 @@ export abstract class AbstractTree<T, TFilterData, TRef> implements IDisposable 
 		const recursive = e.browserEvent.altKey;
 
 		this.model.setCollapsed(location, undefined, recursive);
+	}
+
+	private createTreeRenderer(renderer: ITreeRenderer<T, TFilterData, any>, onDidChangeCollapseStateRelay: Relay<ICollapseStateChangeEvent<T, TFilterData>>, activeNodes: EventCollection<ITreeNode<T, TFilterData>>, options: IAbstractTreeOptions<T, TFilterData>) {
+		if (renderer.templateId === 'file') {
+			return new TreeRendererWithIndent<T, TFilterData, TRef, any>(renderer, () => this.model, onDidChangeCollapseStateRelay.event, activeNodes, options);
+		}
+		else {
+			return new TreeRenderer<T, TFilterData, TRef, any>(renderer, () => this.model, onDidChangeCollapseStateRelay.event, activeNodes, options);
+		}
 	}
 
 	protected abstract createModel(user: string, view: ISpliceable<ITreeNode<T, TFilterData>>, options: IAbstractTreeOptions<T, TFilterData>): ITreeModel<T, TFilterData, TRef>;
