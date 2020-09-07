@@ -17,6 +17,7 @@ import { IEditorService } from 'vs/workbench/services/editor/common/editorServic
 import { getMultiSelectedResources } from 'vs/workbench/contrib/files/browser/files';
 import { AbstractTree } from 'vs/base/browser/ui/tree/abstractTree';
 import { Directory } from 'vs/workbench/contrib/scopeTree/browser/directoryViewer';
+import { IBlueprintsObserver } from 'vs/workbench/contrib/scopeTree/browser/blueprintsView';
 
 // Handlers implementations for context menu actions
 const changeFileExplorerRoot: ICommandHandler = (accessor: ServicesAccessor, element: Directory) => {
@@ -62,8 +63,8 @@ const sortBookmarksByDate: ICommandHandler = (accessor: ServicesAccessor) => {
 	accessor.get(IBookmarksManager).sortBookmarks(SortType.DATE);
 };
 
-const displayBookmarkInFileTree: ICommandHandler = (accessor: ServicesAccessor, element: Bookmark | BookmarkHeader) => {
-	if (element && element instanceof Bookmark) {
+const displayBookmarkInFileTree: ICommandHandler = (accessor: ServicesAccessor, element: Directory | BookmarkHeader) => {
+	if (element && element instanceof Directory) {
 		accessor.get(IExplorerService).select(element.resource);
 	}
 };
@@ -137,6 +138,15 @@ MenuRegistry.appendMenuItem(MenuId.DisplayBookmarksContext, {
 	}
 });
 
+MenuRegistry.appendMenuItem(MenuId.ExplorerContext, {
+	group: '99_blueprint',
+	order: 10,
+	command: {
+		id: 'addToWorkspaceBlueprint',
+		title: 'Add to workspace blueprint'
+	}
+});
+
 // Register commands
 KeybindingsRegistry.registerCommandAndKeybindingRule({
 	id: 'removeBookmark',
@@ -183,4 +193,13 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 	id: 'displayBookmarkInFileTree',
 	weight: KeybindingWeight.WorkbenchContrib,
 	handler: displayBookmarkInFileTree
+});
+
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+	id: 'addToWorkspaceBlueprint',
+	weight: KeybindingWeight.WorkbenchContrib,
+	handler: (accessor: ServicesAccessor, resource: URI) => {
+		const blueprintObserver = accessor.get(IBlueprintsObserver);
+		blueprintObserver.addBlueprint(resource);
+	}
 });

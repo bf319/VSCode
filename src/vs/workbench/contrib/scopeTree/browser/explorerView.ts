@@ -57,6 +57,7 @@ import { dirname, basename } from 'vs/base/common/resources';
 import { Codicon } from 'vs/base/common/codicons';
 import 'vs/css!./media/treeNavigation';
 import { IBookmarksManager } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
+import { IBlueprintsObserver } from 'vs/workbench/contrib/scopeTree/browser/blueprintsView';
 
 interface IExplorerViewColors extends IColorMapping {
 	listDropBackground?: ColorValue | undefined;
@@ -179,7 +180,8 @@ export class ExplorerView extends ViewPane {
 		@IFileService private readonly fileService: IFileService,
 		@IUriIdentityService private readonly uriIdentityService: IUriIdentityService,
 		@IOpenerService openerService: IOpenerService,
-		@IBookmarksManager private readonly bookmarksManager: IBookmarksManager
+		@IBookmarksManager private readonly bookmarksManager: IBookmarksManager,
+		@IBlueprintsObserver private readonly blueprintObserver: IBlueprintsObserver
 	) {
 		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
 

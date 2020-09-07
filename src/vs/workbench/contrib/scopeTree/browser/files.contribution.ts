@@ -46,6 +46,7 @@ import { BreadcrumbObserver } from 'vs/workbench/contrib/scopeTree/browser/bread
 import { IBreadcrumbObserver } from 'vs/workbench/browser/parts/editor/breadcrumbObserver';
 import { RecentDirectoriesManager } from 'vs/workbench/contrib/scopeTree/browser/recentDirectoriesManager';
 import { IRecentDirectoriesManager } from 'vs/workbench/contrib/scopeTree/common/recentDirectories';
+import { IBlueprintsObserver, Blueprints } from 'vs/workbench/contrib/scopeTree/browser/blueprintsView';
 
 // Viewlet Action
 export class OpenExplorerViewletAction extends ShowViewletAction {
@@ -84,6 +85,7 @@ registerSingleton(IExplorerService, ExplorerService, true);
 registerSingleton(IBookmarksManager, BookmarksManager, true);
 registerSingleton(IBreadcrumbObserver, BreadcrumbObserver, true);
 registerSingleton(IRecentDirectoriesManager, RecentDirectoriesManager, true);
+registerSingleton(IBlueprintsObserver, Blueprints, true);
 
 const openViewletKb: IKeybindings = {
 	primary: KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KEY_E
