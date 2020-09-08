@@ -285,7 +285,7 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 		const newPath = await fileDialogService.pickFileToSave(defaultPath);
 		if (newPath) {
 			const toWrite = JSON.stringify(Array.from(workspaceBookmarks));
-			await textFileService.create(newPath, toWrite, { overwrite: true });
+			textFileService.create(newPath, toWrite, { overwrite: true });
 		}
 	}
 });
