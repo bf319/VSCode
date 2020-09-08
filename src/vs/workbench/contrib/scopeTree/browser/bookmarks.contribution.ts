@@ -17,6 +17,7 @@ import { IEditorService } from 'vs/workbench/services/editor/common/editorServic
 import { getMultiSelectedResources } from 'vs/workbench/contrib/files/browser/files';
 import { AbstractTree } from 'vs/base/browser/ui/tree/abstractTree';
 import { Directory } from 'vs/workbench/contrib/scopeTree/browser/directoryViewer';
+import { isEqualOrParent } from 'vs/base/common/resources';
 
 // Handlers implementations for context menu actions
 const addBookmark: ICommandHandler = (accessor: ServicesAccessor, scope: BookmarkType) => {
@@ -77,7 +78,16 @@ const sortBookmarksByDate: ICommandHandler = (accessor: ServicesAccessor) => {
 
 const displayBookmarkInFileTree: ICommandHandler = (accessor: ServicesAccessor, element: Directory | BookmarkHeader) => {
 	if (element && element instanceof Directory) {
-		accessor.get(IExplorerService).select(element.resource);
+		const explorerService = accessor.get(IExplorerService);
+		const rootResource = explorerService.roots[0].resource;
+		const selectedResource = element.resource;
+
+		const isChildOfCurrentRoot = isEqualOrParent(selectedResource, rootResource);
+		if (isChildOfCurrentRoot) {
+			explorerService.select(selectedResource);
+		} else {
+			explorerService.setRoot(selectedResource);
+		}
 	}
 };
 
