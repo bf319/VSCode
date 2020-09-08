@@ -17,6 +17,8 @@ import { IEditorService } from 'vs/workbench/services/editor/common/editorServic
 import { getMultiSelectedResources } from 'vs/workbench/contrib/files/browser/files';
 import { AbstractTree } from 'vs/base/browser/ui/tree/abstractTree';
 import { Directory } from 'vs/workbench/contrib/scopeTree/browser/directoryViewer';
+import { dirname } from 'vs/base/common/resources';
+import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 
 // Handlers implementations for context menu actions
 const addBookmark: ICommandHandler = (accessor: ServicesAccessor, scope: BookmarkType) => {
@@ -209,6 +211,26 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 	weight: KeybindingWeight.WorkbenchContrib,
 	primary: KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KEY_R,
 	handler: changeFileExplorerRoot
+});
+
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+	id: 'setParentAsRootInFileTree',
+	weight: KeybindingWeight.WorkbenchContrib,
+	primary: KeyMod.CtrlCmd | KeyMod.Shift | KeyMod.Alt | KeyCode.KEY_R,
+	handler: (accessor: ServicesAccessor) => {
+		const explorerService = accessor.get(IExplorerService);
+		const contextService = accessor.get(IWorkspaceContextService);
+		const roots = explorerService.roots;
+		if (!roots || roots.length === 0) {
+			return;
+		}
+
+		const root = roots[0].resource;
+		const isWorkspaceRoot = contextService.getWorkspace().folders.find(folder => folder.uri.toString() === root.toString()) !== undefined;
+		if (!isWorkspaceRoot) {
+			explorerService.setRoot(dirname(root));
+		}
+	}
 });
 
 KeybindingsRegistry.registerCommandAndKeybindingRule({
