@@ -99,21 +99,6 @@ const handleBookmarksChange = (accessor: ServicesAccessor, element: Directory, n
 	toggleIconIfVisible(resource, newScope);
 };
 
-const findResourceSelectedInExplorer = (accessor: ServicesAccessor): URI | undefined => {
-	const listService = accessor.get(IListService);
-	const editorService = accessor.get(IEditorService);
-	const explorerService = accessor.get(IExplorerService);
-	const lastFocusedList = listService.lastFocusedList;
-	if (lastFocusedList && lastFocusedList?.getHTMLElement() === document.activeElement) {
-		// Selection in explorer (don't allow multiple selection)
-		const resources = getMultiSelectedResources(undefined, listService, editorService, explorerService);
-		const resource = resources && resources.length === 1 ? resources[0] : undefined;
-		return resource;
-	}
-
-	return undefined;
-};
-
 // Bookmarks panel context menu
 MenuRegistry.appendMenuItem(MenuId.DisplayBookmarksContext, {
 	group: '1_bookmarks_sort',
@@ -293,18 +278,31 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 KeybindingsRegistry.registerCommandAndKeybindingRule({
 	id: 'importBookmarks',
 	weight: KeybindingWeight.WorkbenchContrib,
-	handler: (accessor: ServicesAccessor) => {
+	handler: async (accessor: ServicesAccessor) => {
 		const bookmarksManager = accessor.get(IBookmarksManager);
 		const fileService = accessor.get(IFileService);
+		const fileDialogService = accessor.get(IFileDialogService);
+		const contextService = accessor.get(IWorkspaceContextService);
 
-		const selectedResource = findResourceSelectedInExplorer(accessor);
-		if (selectedResource) {
-			fileService.readFile(selectedResource).then(blueprintsRaw => {
-				const blueprints = new Set(JSON.parse(blueprintsRaw.value.toString()) as string[]);
-				blueprints.forEach(res => {
-					bookmarksManager.addBookmark(URI.parse(res), BookmarkType.WORKSPACE);
+		const workspaceFolder = contextService.getWorkspace().folders[0];
+		/*
+			The proper options should be passed in availableFileSystems, but it does not work for my in-memory fs
+			e.g. if I try to open a file using the left sidebar, I get the following error:
+			'No file system provider found for resource vscode-remote'
+		*/
+		fileDialogService.showOpenDialog({ defaultUri: workspaceFolder.uri, canSelectFiles: true, canSelectMany: true }).then(resources => {
+			if (!resources || resources.length === 0) {
+				return;
+			}
+
+			resources.forEach(resource => {
+				fileService.readFile(resource).then(blueprintsRaw => {
+					const blueprints = new Set(JSON.parse(blueprintsRaw.value.toString()) as string[]);
+					blueprints.forEach(res => {
+						bookmarksManager.addBookmark(URI.parse(res), BookmarkType.WORKSPACE);
+					});
 				});
 			});
-		}
+		});
 	}
 });
