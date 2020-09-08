@@ -40,17 +40,19 @@ export class ExplorerModel implements IDisposable {
 		return this._onDidChangeRoots.event;
 	}
 
-	async setRoot(resource: URI, sortOrder: SortOrder): Promise<void> {
+	async setRoot(resource: URI, sortOrder: SortOrder, triggerRootsChanged?: boolean): Promise<void> {
 		const root = new ExplorerItem(resource, this.fileService, undefined);
 
 		const children = await root.fetchChildren(sortOrder);
-
 		children.forEach(child => {
 			root.addChild(child);
 		});
 
 		this._roots = [root];
-		this._onDidChangeRoots.fire();
+
+		if (triggerRootsChanged) {
+			this._onDidChangeRoots.fire();
+		}
 	}
 
 	/**

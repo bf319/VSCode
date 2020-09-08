@@ -143,13 +143,19 @@ export class ExplorerService implements IExplorerService {
 	}
 
 	setRoot(resource: URI, fileToSelect: URI | undefined = undefined): void {
-		this.model.setRoot(resource, this.sortOrder).then(() =>
-			this.view?.setTreeInput().then(() => {
-				// There is a file to select and the root has not changed in the meantime
-				if (fileToSelect && resource.toString() === this.roots[0].resource.toString()) {
-					this.view?.selectResource(fileToSelect);
-				}
-			}));
+		// If we need to select a resource, we want to set the tree input 'manually', so avoid triggering model.onDidChangeRoots
+		if (!fileToSelect) {
+			this.model.setRoot(resource, this.sortOrder, true);
+		}
+		else {
+			this.model.setRoot(resource, this.sortOrder, false).then(() =>
+				this.view?.setTreeInput().then(() => {
+					// There is a file to select and the root has not changed in the meantime
+					if (resource.toString() === this.roots[0].resource.toString()) {
+						this.view?.selectResource(fileToSelect);
+					}
+				}));
+		}
 	}
 
 	getEditable(): { stat: ExplorerItem, data: IEditableData } | undefined {
