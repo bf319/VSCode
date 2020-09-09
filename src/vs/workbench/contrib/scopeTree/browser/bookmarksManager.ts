@@ -5,7 +5,7 @@
 
 import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
 import { URI } from 'vs/base/common/uri';
-import { IBookmarksManager, BookmarkType, SortType } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
+import { IBookmarksManager, BookmarkType, SortType, bookmarkClass } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
 import { Emitter } from 'vs/base/common/event';
 
 export class BookmarksManager implements IBookmarksManager {
@@ -65,6 +65,7 @@ export class BookmarksManager implements IBookmarksManager {
 			}
 		}
 
+		this.changeBookmarkIfVisible(resource, scope);
 		this._onBookmarksChanged.fire({ uri: resource, bookmarkType: scope, prevBookmarkType: prevScope });
 	}
 
@@ -121,5 +122,27 @@ export class BookmarksManager implements IBookmarksManager {
 
 	private saveGlobalBookmarks(): void {
 		this.storageService.store(BookmarksManager.GLOBAL_BOOKMARKS_STORAGE_KEY, JSON.stringify(Array.from(this.globalBookmarks)), StorageScope.GLOBAL);
+	}
+
+	private changeBookmarkIfVisible(resource: URI, scope: BookmarkType): void {
+		const bookmarkIconInFileTree = document.getElementById('bookmarkIconContainer_' + resource.toString());
+		const bookmarkIconInRecentDirs = document.getElementById('bookmarkIconRecentDirectoryContainer_' + resource.toString());
+
+		this.changeTypeAndDisplay(bookmarkIconInFileTree, scope);
+		this.changeTypeAndDisplay(bookmarkIconInRecentDirs, scope);
+	}
+
+	private changeTypeAndDisplay(element: HTMLElement | null, scope: BookmarkType): void {
+		if (!element) {
+			return;
+		}
+
+		if (scope === BookmarkType.NONE) {
+			element.style.visibility = 'hidden';
+		} else {
+			element.style.visibility = 'visible';
+		}
+
+		element.className = bookmarkClass(scope);
 	}
 }

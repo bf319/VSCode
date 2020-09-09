@@ -4,12 +4,11 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { ICommandHandler } from 'vs/platform/commands/common/commands';
-import { IBookmarksManager, BookmarkType, bookmarkClass, SortType } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
+import { IBookmarksManager, BookmarkType, SortType } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
 import { MenuRegistry, MenuId } from 'vs/platform/actions/common/actions';
 import { KeybindingsRegistry, KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
 import { BookmarkHeader } from 'vs/workbench/contrib/scopeTree/browser/bookmarksView';
 import { IExplorerService } from 'vs/workbench/contrib/files/common/files';
-import { URI } from 'vs/base/common/uri';
 import { ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { KeyMod, KeyCode } from 'vs/base/common/keyCodes';
 import { IListService } from 'vs/platform/list/browser/listService';
@@ -27,7 +26,6 @@ const addBookmark: ICommandHandler = (accessor: ServicesAccessor, scope: Bookmar
 	for (let stat of stats) {
 		if (stat.isDirectory) {
 			bookmarksManager.addBookmark(stat.resource, scope);
-			toggleIconIfVisible(stat.resource, scope);
 		}
 	}
 };
@@ -81,18 +79,10 @@ const displayBookmarkInFileTree: ICommandHandler = (accessor: ServicesAccessor, 
 	}
 };
 
-const toggleIconIfVisible = (resource: URI, scope: BookmarkType) => {
-	const bookmarkIcon = document.getElementById('bookmarkIconContainer_' + resource.toString());
-	if (bookmarkIcon) {
-		bookmarkIcon.className = bookmarkClass(scope);
-	}
-};
-
 const handleBookmarksChange = (accessor: ServicesAccessor, element: Directory, newScope: BookmarkType) => {
 	const bookmarksManager = accessor.get(IBookmarksManager);
 	const resource = element.resource;
 	bookmarksManager.addBookmark(resource, newScope);
-	toggleIconIfVisible(resource, newScope);
 };
 
 // Bookmarks panel context menu
