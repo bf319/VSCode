@@ -146,7 +146,7 @@ export class ExplorerService implements IExplorerService {
 		this.model.setRoot(resource, this.sortOrder).then(() =>
 			this.view?.setTreeInput().then(() => {
 				// There is a file to select and the root has not changed in the meantime
-				if (resource.toString() === this.roots[0].resource.toString()) {
+				if (fileToSelect && resource.toString() === this.roots[0].resource.toString()) {
 					this.view?.selectResource(fileToSelect);
 				}
 				this._onDidChangeRoot.fire();
