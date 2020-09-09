@@ -50,6 +50,7 @@ export class BreadcrumbObserver implements IBreadcrumbObserver {
 		const iconContainer = document.createElement('img');
 		iconContainer.className = 'scope-tree-focus-icon';
 		iconContainer.id = 'breadcrumbFocusIconContainer_' + resource.toString();
+		iconContainer.style.paddingLeft = '5px';	// Leave some space between the dir name and icon in the breadcrumb
 
 		const previousIcon = templateData.element.lastChild;
 		if (previousIcon && (<HTMLElement>previousIcon).className === 'scope-tree-focus-icon') {

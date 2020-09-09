@@ -248,6 +248,7 @@ class FocusIconRenderer implements IDisposable {
 		this._iconContainer = document.createElement('img');
 		DOM.addClass(this._iconContainer, 'scope-tree-focus-icon');
 		this._iconContainer.id = 'iconContainer_' + this.stat.resource.toString();
+		this._iconContainer.style.paddingLeft = '8px';	// The row is moved to the left in renderTemplate(), so the focus icon needs some extra padding
 	}
 
 	get iconContainer(): HTMLElement {
@@ -265,6 +266,7 @@ class BookmarkIconRenderer implements IDisposable {
 	constructor(stat: ExplorerItem, bookmarkManager: IBookmarksManager) {
 		this._iconContainer = document.createElement('img');
 		this._iconContainer.id = 'bookmarkIconContainer_' + stat.resource.toString();
+		this._iconContainer.style.paddingRight = '0px';	// By default bookmarks leave some space between the icon and the directory name (in panels)
 		this._iconContainer.onclick = () => {
 			const newType = bookmarkManager.toggleBookmarkType(stat.resource);
 			this._iconContainer.className = bookmarkClass(newType);
@@ -329,8 +331,9 @@ export class FilesRenderer implements ICompressibleTreeRenderer<ExplorerItem, Fu
 
 	renderTemplate(container: HTMLElement): IFileTemplateData {
 		const elementDisposable = Disposable.None;
+		const rowContainer = this.getRowContainerElement(container);
 		const label = this.labels.create(container, { supportHighlights: true });
-
+		rowContainer.style.left = '-10px';	// Move the whole row to the left so that bookmarks are not covered by the scrollbar
 		return { elementDisposable, label, container };
 	}
 
@@ -340,7 +343,6 @@ export class FilesRenderer implements ICompressibleTreeRenderer<ExplorerItem, Fu
 		const editableData = this.explorerService.getEditableData(stat);
 
 		DOM.removeClass(templateData.label.element, 'compressed');
-
 		// File Label
 		if (!editableData) {
 			templateData.label.element.style.display = 'flex';
@@ -436,7 +438,6 @@ export class FilesRenderer implements ICompressibleTreeRenderer<ExplorerItem, Fu
 
 			if (this.bookmarksManager) {
 				const bookmarkIcon = new BookmarkIconRenderer(stat, this.bookmarksManager);
-				bookmarkIcon.iconContainer.style.paddingRight = '10px';
 
 				templateData.label.element.appendChild(bookmarkIcon.iconContainer);
 				disposables.add(bookmarkIcon);
