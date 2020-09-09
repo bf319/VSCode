@@ -260,9 +260,10 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 		const contextService = accessor.get(IWorkspaceContextService);
 		const fileDialogService = accessor.get(IFileDialogService);
 		const fileService = accessor.get(IFileService);
+		const editorService = accessor.get(IEditorService);
 
 		const workspaceBookmarks = bookmarksManager.workspaceBookmarks;
-		const workspaceFolder = contextService.getWorkspace().folders[0];
+		const workspaceFolder = contextService.getWorkspace().folders[0];	// This is just a placeholder for now and the availableFS option should be used below instead
 		if (!workspaceFolder) {
 			return;
 		}
@@ -276,18 +277,22 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 
 				fileService.exists(newPath).then(async exists => {
 					if (exists) {
-						// Files need to be merged
+						// Bookmarks need to be merged
 						const blueprintsRaw = (await fileService.readFile(newPath)).value.toString();
-						const prevBlueprints = JSON.parse(blueprintsRaw) as string[];
-
-						// When we will store the bookmarks sorted by name, this can be improved to take O(log(n)) per insertion using arrays and some binary insertion
-						prevBlueprints.forEach(bookmark => {
+						const prevBookmarks = JSON.parse(blueprintsRaw) as string[];
+						prevBookmarks.forEach(bookmark => {
 							workspaceBookmarks.add(bookmark);
 						});
 
-						textFileService.write(newPath, JSON.stringify(Array.from(workspaceBookmarks)));
+						const toWrite: string[] = Directory.getDirectoriesAsSortedTreeElements(workspaceBookmarks, SortType.NAME)
+							.map(treeElement => treeElement.element.resource.toString());
+
+						textFileService.write(newPath, JSON.stringify(toWrite, undefined, '\t' /* Insert tab and new line before resource */)).then(() => editorService.openEditor({ resource: newPath }));
 					} else {
-						textFileService.create(newPath, JSON.stringify(Array.from(workspaceBookmarks)));
+						const toWrite: string[] = Directory.getDirectoriesAsSortedTreeElements(workspaceBookmarks, SortType.NAME)
+							.map(treeElement => treeElement.element.resource.toString());
+
+						textFileService.create(newPath, JSON.stringify(toWrite, undefined, '\t' /* Insert tab and new line before resource */)).then(() => editorService.openEditor({ resource: newPath }));
 					}
 				});
 			});
@@ -303,15 +308,15 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 		const fileDialogService = accessor.get(IFileDialogService);
 		const contextService = accessor.get(IWorkspaceContextService);
 
-		const workspaceFolder = contextService.getWorkspace().folders[0];
+		const workspaceFolder = contextService.getWorkspace().folders[0];	// This is a placeholder for now
 		fileDialogService.showOpenDialog({ defaultUri: workspaceFolder.uri /* Use availableFileSystems, not this */, canSelectFiles: true, canSelectMany: false, filters: [{ name: 'Blueprint files', extensions: ['bookmarks'] }] })
 			.then(resources => {
 				if (!resources || resources.length === 0) {
 					return;
 				}
 
-				fileService.readFile(resources[0]).then(blueprintsRaw => {
-					const blueprints = new Set(JSON.parse(blueprintsRaw.value.toString()) as string[]);
+				fileService.readFile(resources[0]).then(bookmarksRaw => {
+					const blueprints = new Set(JSON.parse(bookmarksRaw.value.toString()) as string[]);
 					blueprints.forEach(res => {
 						bookmarksManager.addBookmark(URI.parse(res), BookmarkType.WORKSPACE);
 					});
