@@ -234,7 +234,7 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 });
 
 MenuRegistry.appendMenuItem(MenuId.DisplayBookmarksContext, {
-	group: '4_export_bookmarks',
+	group: '4_blueprint_bookmarks',
 	order: 10,
 	command: {
 		id: 'importBookmarks',
@@ -243,7 +243,7 @@ MenuRegistry.appendMenuItem(MenuId.DisplayBookmarksContext, {
 });
 
 MenuRegistry.appendMenuItem(MenuId.DisplayBookmarksContext, {
-	group: '4_export_bookmarks',
+	group: '4_blueprint_bookmarks',
 	order: 20,
 	command: {
 		id: 'exportBookmarks',
@@ -254,11 +254,12 @@ MenuRegistry.appendMenuItem(MenuId.DisplayBookmarksContext, {
 KeybindingsRegistry.registerCommandAndKeybindingRule({
 	id: 'exportBookmarks',
 	weight: KeybindingWeight.WorkbenchContrib,
-	handler: async (accessor: ServicesAccessor) => {
+	handler: (accessor: ServicesAccessor) => {
 		const bookmarksManager = accessor.get(IBookmarksManager);
 		const textFileService = accessor.get(ITextFileService);
 		const contextService = accessor.get(IWorkspaceContextService);
 		const fileDialogService = accessor.get(IFileDialogService);
+		const fileService = accessor.get(IFileService);
 
 		const workspaceBookmarks = bookmarksManager.workspaceBookmarks;
 		const workspaceFolder = contextService.getWorkspace().folders[0];
@@ -266,43 +267,55 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 			return;
 		}
 
-		const defaultPath = URI.joinPath(workspaceFolder.uri, 'blueprints');
-		const newPath = await fileDialogService.pickFileToSave(defaultPath);
-		if (newPath) {
-			const toWrite = JSON.stringify(Array.from(workspaceBookmarks));
-			textFileService.create(newPath, toWrite, { overwrite: true });
-		}
+		const defaultPath = URI.joinPath(workspaceFolder.uri, 'blueprint');
+		fileDialogService.showSaveDialog({ title: 'Save Bookmarks As...', defaultUri: defaultPath /* Use availableFileSystems, not this */, filters: [{ name: 'Blueprint files', extensions: ['bookmarks'] }] })
+			.then(newPath => {
+				if (!newPath) {
+					return;
+				}
+
+				fileService.exists(newPath).then(async exists => {
+					if (exists) {
+						// Files need to be merged
+						const blueprintsRaw = (await fileService.readFile(newPath)).value.toString();
+						const prevBlueprints = JSON.parse(blueprintsRaw) as string[];
+
+						// When we will store the bookmarks sorted by name, this can be improved to take O(log(n)) per insertion using arrays and some binary insertion
+						prevBlueprints.forEach(bookmark => {
+							workspaceBookmarks.add(bookmark);
+						});
+
+						textFileService.write(newPath, JSON.stringify(Array.from(workspaceBookmarks)));
+					} else {
+						textFileService.create(newPath, JSON.stringify(Array.from(workspaceBookmarks)));
+					}
+				});
+			});
 	}
 });
 
 KeybindingsRegistry.registerCommandAndKeybindingRule({
 	id: 'importBookmarks',
 	weight: KeybindingWeight.WorkbenchContrib,
-	handler: async (accessor: ServicesAccessor) => {
+	handler: (accessor: ServicesAccessor) => {
 		const bookmarksManager = accessor.get(IBookmarksManager);
 		const fileService = accessor.get(IFileService);
 		const fileDialogService = accessor.get(IFileDialogService);
 		const contextService = accessor.get(IWorkspaceContextService);
 
 		const workspaceFolder = contextService.getWorkspace().folders[0];
-		/*
-			The proper options should be passed in availableFileSystems, but it does not work for my in-memory fs
-			e.g. if I try to open a file using the left sidebar, I get the following error:
-			'No file system provider found for resource vscode-remote'
-		*/
-		fileDialogService.showOpenDialog({ defaultUri: workspaceFolder.uri, canSelectFiles: true, canSelectMany: true }).then(resources => {
-			if (!resources || resources.length === 0) {
-				return;
-			}
+		fileDialogService.showOpenDialog({ defaultUri: workspaceFolder.uri /* Use availableFileSystems, not this */, canSelectFiles: true, canSelectMany: false, filters: [{ name: 'Blueprint files', extensions: ['bookmarks'] }] })
+			.then(resources => {
+				if (!resources || resources.length === 0) {
+					return;
+				}
 
-			resources.forEach(resource => {
-				fileService.readFile(resource).then(blueprintsRaw => {
+				fileService.readFile(resources[0]).then(blueprintsRaw => {
 					const blueprints = new Set(JSON.parse(blueprintsRaw.value.toString()) as string[]);
 					blueprints.forEach(res => {
 						bookmarksManager.addBookmark(URI.parse(res), BookmarkType.WORKSPACE);
 					});
 				});
 			});
-		});
 	}
 });
