@@ -72,7 +72,7 @@ export class ExplorerService implements IExplorerService {
 				}
 			}
 		}));
-		this.disposables.add(this.model.onDidChangeRoots(() => {
+		this.disposables.add(this.model.onDidChangeWorkspaceFolders(() => {
 			if (this.view) {
 				this.view.setTreeInput().then(() => this._onDidChangeRoot.fire());
 			}
@@ -143,19 +143,14 @@ export class ExplorerService implements IExplorerService {
 	}
 
 	setRoot(resource: URI, fileToSelect: URI | undefined = undefined): void {
-		// If we need to select a resource, we want to set the tree input 'manually', so avoid triggering model.onDidChangeRoots
-		if (!fileToSelect) {
-			this.model.setRoot(resource, this.sortOrder, true);
-		}
-		else {
-			this.model.setRoot(resource, this.sortOrder, false).then(() =>
-				this.view?.setTreeInput().then(() => {
-					// There is a file to select and the root has not changed in the meantime
-					if (resource.toString() === this.roots[0].resource.toString()) {
-						this.view?.selectResource(fileToSelect);
-					}
-				}));
-		}
+		this.model.setRoot(resource, this.sortOrder).then(() =>
+			this.view?.setTreeInput().then(() => {
+				// There is a file to select and the root has not changed in the meantime
+				if (resource.toString() === this.roots[0].resource.toString()) {
+					this.view?.selectResource(fileToSelect);
+				}
+				this._onDidChangeRoot.fire();
+			}));
 	}
 
 	getEditable(): { stat: ExplorerItem, data: IEditableData } | undefined {
