@@ -246,9 +246,8 @@ class FocusIconRenderer implements IDisposable {
 
 	constructor(private stat: ExplorerItem) {
 		this._iconContainer = document.createElement('img');
-		DOM.addClass(this._iconContainer, 'scope-tree-focus-icon');
+		DOM.addClass(this._iconContainer, 'scope-tree-focus-icon-file-tree-aligned');
 		this._iconContainer.id = 'iconContainer_' + this.stat.resource.toString();
-		this._iconContainer.style.paddingLeft = '8px';	// The row is moved to the left in renderTemplate(), so the focus icon needs some extra padding
 	}
 
 	get iconContainer(): HTMLElement {
