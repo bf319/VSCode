@@ -65,7 +65,6 @@ export class BookmarksManager implements IBookmarksManager {
 			}
 		}
 
-		this.changeBookmarkIfVisible(resource, scope);
 		this._onBookmarksChanged.fire({ uri: resource, bookmarkType: scope, prevBookmarkType: prevScope });
 	}
 
@@ -124,15 +123,8 @@ export class BookmarksManager implements IBookmarksManager {
 		this.storageService.store(BookmarksManager.GLOBAL_BOOKMARKS_STORAGE_KEY, JSON.stringify(Array.from(this.globalBookmarks)), StorageScope.GLOBAL);
 	}
 
-	private changeBookmarkIfVisible(resource: URI, scope: BookmarkType): void {
-		const bookmarkIconInFileTree = document.getElementById('bookmarkIconContainer_' + resource.toString());
-		const bookmarkIconInRecentDirs = document.getElementById('bookmarkIconRecentDirectoryContainer_' + resource.toString());
-
-		this.changeTypeAndDisplay(bookmarkIconInFileTree, scope);
-		this.changeTypeAndDisplay(bookmarkIconInRecentDirs, scope);
-	}
-
-	private changeTypeAndDisplay(element: HTMLElement | null, scope: BookmarkType): void {
+	public changeTypeAndDisplay(bookmarkId: string, scope: BookmarkType): void {
+		const element = document.getElementById(bookmarkId);
 		if (!element) {
 			return;
 		}

@@ -185,6 +185,20 @@ export class RecentDirectoriesView extends ViewPane {
 				bookmarkIcon.style.visibility = 'hidden';
 			}
 		}));
+
+		this._register(this.bookmarksManager.onBookmarksChanged(e => {
+			if (!this.isVisible) {
+				return;
+			}
+
+			this.bookmarksManager.changeTypeAndDisplay('bookmarkIconRecentDirectoryContainer_' + e.uri.toString(), e.bookmarkType);
+		}));
+
+		this._register(this.onDidChangeExpansionState(visible => {
+			if (visible) {
+				this.refreshView();
+			}
+		}));
 	}
 
 	protected layoutBody(height: number, width: number): void {
