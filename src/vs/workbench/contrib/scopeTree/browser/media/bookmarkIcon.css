@@ -4,7 +4,6 @@
  *--------------------------------------------------------------------------------------------*/
 .bookmark-not-set{
 	content: url('bookmark-not-set.svg');
-	padding-right: 5px;
 	padding-bottom: 2px;
 	object-fit: contain;
 }
@@ -12,14 +11,12 @@
 .bookmark-set-global{
 	content: url('bookmark-set-global.svg');
 	padding-bottom: 2px;
-	padding-right: 5px;
 	object-fit: contain;
 }
 
 .bookmark-set-workspace{
 	content: url('bookmark-set-workspace.svg');
 	padding-bottom: 2px;
-	padding-right: 5px;
 	object-fit: contain;
 }
 
