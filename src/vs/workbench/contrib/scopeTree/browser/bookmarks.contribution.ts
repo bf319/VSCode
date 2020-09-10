@@ -262,7 +262,7 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 		const fileService = accessor.get(IFileService);
 		const editorService = accessor.get(IEditorService);
 
-		const workspaceBookmarks = bookmarksManager.workspaceBookmarks;
+		const workspaceBookmarks = new Set(bookmarksManager.workspaceBookmarks);
 		const workspaceFolder = contextService.getWorkspace().folders[0];	// This is just a placeholder for now and the availableFS option should be used below instead
 		if (!workspaceFolder) {
 			return;
@@ -279,21 +279,17 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 					if (exists) {
 						// Bookmarks need to be merged
 						const blueprintsRaw = (await fileService.readFile(newPath)).value.toString();
-						const prevBookmarks = JSON.parse(blueprintsRaw) as string[];
+						const prevBookmarks = new Set(JSON.parse(blueprintsRaw) as string[]);
 						prevBookmarks.forEach(bookmark => {
 							workspaceBookmarks.add(bookmark);
 						});
-
-						const toWrite: string[] = Directory.getDirectoriesAsSortedTreeElements(workspaceBookmarks, SortType.NAME)
-							.map(treeElement => treeElement.element.resource.toString());
-
-						textFileService.write(newPath, JSON.stringify(toWrite, undefined, '\t' /* Insert tab and new line before resource */)).then(() => editorService.openEditor({ resource: newPath }));
-					} else {
-						const toWrite: string[] = Directory.getDirectoriesAsSortedTreeElements(workspaceBookmarks, SortType.NAME)
-							.map(treeElement => treeElement.element.resource.toString());
-
-						textFileService.create(newPath, JSON.stringify(toWrite, undefined, '\t' /* Insert tab and new line before resource */)).then(() => editorService.openEditor({ resource: newPath }));
 					}
+
+					const toWrite: string[] = Directory.getDirectoriesAsSortedTreeElements(workspaceBookmarks, SortType.NAME)
+						.map(treeElement => treeElement.element.resource.toString());
+
+					textFileService.create(newPath, JSON.stringify(toWrite, undefined, '\t' /* Insert tab and new line before resource */), { overwrite: true }).then(() => editorService.openEditor({ resource: newPath }));
+
 				});
 			});
 	}
