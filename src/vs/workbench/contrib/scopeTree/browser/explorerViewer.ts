@@ -265,10 +265,7 @@ class BookmarkIconRenderer implements IDisposable {
 	constructor(stat: ExplorerItem, bookmarkManager: IBookmarksManager) {
 		this._iconContainer = document.createElement('img');
 		this._iconContainer.id = 'bookmarkIconContainer_' + stat.resource.toString();
-		this._iconContainer.onclick = () => {
-			const newType = bookmarkManager.toggleBookmarkType(stat.resource);
-			this._iconContainer.className = bookmarkClass(newType);
-		};
+		this._iconContainer.onclick = () => bookmarkManager.toggleBookmarkType(stat.resource);
 
 		const bookmarkType = bookmarkManager.getBookmarkType(stat.resource);
 		this._iconContainer.className = bookmarkClass(bookmarkType);
