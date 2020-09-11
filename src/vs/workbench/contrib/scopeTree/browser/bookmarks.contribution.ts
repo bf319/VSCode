@@ -297,9 +297,7 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 						});
 					}
 
-					const toWrite: string[] = Directory.getDirectoriesAsSortedTreeElements(workspaceBookmarks, SortType.NAME)
-						.map(treeElement => treeElement.element.resource.toString());
-
+					const toWrite = Array.from(workspaceBookmarks).sort((path1, path2) => (path1 < path2) ? -1 : 1);	//Equality cannot happen because we have a set
 					textFileService.create(newPath, JSON.stringify(toWrite, undefined, '\t' /* Insert tab and new line before resource */), { overwrite: true }).then(() => editorService.openEditor({ resource: newPath }));
 
 				});
