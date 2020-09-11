@@ -10,3 +10,21 @@
 	width: 16px;
 	visibility: hidden;
 }
+
+.scope-tree-focus-icon-file-tree-aligned {
+	content: url('scope.svg');
+	float: left;
+	align-self: center;
+	width: 16px;
+	visibility: hidden;
+	padding-left: 8px; /* The row is moved to the left in renderTemplate(), so the focus icon needs some extra padding */
+}
+
+.scope-tree-focus-icon-breadcrumb-aligned {
+	content: url('scope.svg');
+	float: left;
+	align-self: center;
+	width: 16px;
+	visibility: hidden;
+	padding-left: 5px; /* Leave some space between the dir name and icon in the breadcrumb */
+}

@@ -513,7 +513,7 @@ class TreeRendererWithIndent<T, TFilterData, TRef, TTemplateData> extends TreeRe
 
 		const paddingLeft = parseInt(templateData.twistie.style.paddingLeft);
 		templateData.twistie.style.paddingLeft = `${paddingLeft - TreeRenderer.DefaultIndent}px`;
-		templateData.indent.style.paddingLeft = `${TreeRenderer.DefaultIndent}px`;
+		templateData.indent.style.paddingLeft = `${TreeRenderer.DefaultIndent * 2}px`;
 	}
 }
 
