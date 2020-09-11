@@ -263,13 +263,13 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 		const editorService = accessor.get(IEditorService);
 
 		const workspaceBookmarks = new Set(bookmarksManager.workspaceBookmarks);
-		const workspaceFolder = contextService.getWorkspace().folders[0];	// This is just a placeholder for now and the availableFS option should be used below instead
+		const workspaceFolder = contextService.getWorkspace().folders[0];
 		if (!workspaceFolder) {
 			return;
 		}
 
 		const defaultPath = URI.joinPath(workspaceFolder.uri, 'blueprint');
-		fileDialogService.showSaveDialog({ title: 'Save Bookmarks As...', defaultUri: defaultPath /* Use availableFileSystems, not this */, filters: [{ name: 'Blueprint files', extensions: ['bookmarks'] }] })
+		fileDialogService.showSaveDialog({ title: 'Save Bookmarks As...', defaultUri: defaultPath, filters: [{ name: 'Blueprint files', extensions: ['bookmarks'] }] })
 			.then(newPath => {
 				if (!newPath) {
 					return;
@@ -304,8 +304,8 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 		const fileDialogService = accessor.get(IFileDialogService);
 		const contextService = accessor.get(IWorkspaceContextService);
 
-		const workspaceFolder = contextService.getWorkspace().folders[0];	// This is a placeholder for now
-		fileDialogService.showOpenDialog({ defaultUri: workspaceFolder.uri /* Use availableFileSystems, not this */, canSelectFiles: true, canSelectMany: false, filters: [{ name: 'Blueprint files', extensions: ['bookmarks'] }] })
+		const workspaceFolder = contextService.getWorkspace().folders[0];
+		fileDialogService.showOpenDialog({ defaultUri: workspaceFolder.uri, canSelectFiles: true, canSelectMany: false, filters: [{ name: 'Blueprint files', extensions: ['bookmarks'] }] })
 			.then(resources => {
 				if (!resources || resources.length === 0) {
 					return;
