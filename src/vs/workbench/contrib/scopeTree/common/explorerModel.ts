@@ -8,15 +8,15 @@ import { IFileService } from 'vs/platform/files/common/files';
 import { coalesce } from 'vs/base/common/arrays';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { IDisposable, dispose } from 'vs/base/common/lifecycle';
-import { Emitter, Event } from 'vs/base/common/event';
 import { SortOrder } from 'vs/workbench/contrib/files/common/files';
 import { ExplorerItem } from 'vs/workbench/contrib/files/common/explorerModel';
+import { Emitter, Event } from 'vs/base/common/event';
 
 export class ExplorerModel implements IDisposable {
 
 	private _roots!: ExplorerItem[];
 	private _listener: IDisposable;
-	private readonly _onDidChangeRoots = new Emitter<void>();
+	private readonly _onDidChangeWorkspaceFolders = new Emitter<void>();
 
 	constructor(
 		private readonly contextService: IWorkspaceContextService,
@@ -28,7 +28,7 @@ export class ExplorerModel implements IDisposable {
 
 		this._listener = this.contextService.onDidChangeWorkspaceFolders(() => {
 			setRoots();
-			this._onDidChangeRoots.fire();
+			this._onDidChangeWorkspaceFolders.fire();
 		});
 	}
 
@@ -36,21 +36,19 @@ export class ExplorerModel implements IDisposable {
 		return this._roots;
 	}
 
-	get onDidChangeRoots(): Event<void> {
-		return this._onDidChangeRoots.event;
+	get onDidChangeWorkspaceFolders(): Event<void> {
+		return this._onDidChangeWorkspaceFolders.event;
 	}
 
 	async setRoot(resource: URI, sortOrder: SortOrder): Promise<void> {
 		const root = new ExplorerItem(resource, this.fileService, undefined);
 
 		const children = await root.fetchChildren(sortOrder);
-
 		children.forEach(child => {
 			root.addChild(child);
 		});
 
 		this._roots = [root];
-		this._onDidChangeRoots.fire();
 	}
 
 	/**

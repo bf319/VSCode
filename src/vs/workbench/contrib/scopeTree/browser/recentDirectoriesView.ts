@@ -16,7 +16,6 @@ import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IViewletViewOptions } from 'vs/workbench/browser/parts/views/viewsViewlet';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
-import { IMenuService, IMenu } from 'vs/platform/actions/common/actions';
 import { URI } from 'vs/base/common/uri';
 import { IListVirtualDelegate, IKeyboardNavigationLabelProvider } from 'vs/base/browser/ui/list/list';
 import { IDisposable } from 'vs/base/common/lifecycle';
@@ -49,6 +48,8 @@ class RecentDirectoryElementIconRenderer extends DirectoryElementIconRenderer {
 		explorerService: IExplorerService,
 		private readonly bookmarksManager: IBookmarksManager) {
 		super(container, stat, explorerService);
+		this._focusIcon.style.paddingLeft = '5px';
+
 		this.renderBookmarkIcon();
 	}
 
@@ -61,18 +62,14 @@ class RecentDirectoryElementIconRenderer extends DirectoryElementIconRenderer {
 		this._bookmarkIcon = document.createElement('img');
 		this._bookmarkIcon.id = 'bookmarkIconRecentDirectoryContainer_' + this.stat.toString();
 		this._bookmarkIcon.className = bookmarkClass(bookmarkType);
-		this._bookmarkIcon.onclick = () => {
-			const newType = this.bookmarksManager.toggleBookmarkType(this.stat);
-			this._bookmarkIcon.className = bookmarkClass(newType);
-		};
+		this._bookmarkIcon.onclick = () => this.bookmarksManager.toggleBookmarkType(this.stat);
+		this._bookmarkIcon.style.paddingRight = '10px';
 
 		if (bookmarkType === BookmarkType.NONE) {
 			this._bookmarkIcon.style.visibility = 'hidden';
 		}
 
-		if (this.container.firstChild) {
-			this.container.insertBefore(this._bookmarkIcon, this.container.firstChild?.nextSibling);
-		}
+		this.container.appendChild(this._bookmarkIcon);
 	}
 
 	dispose(): void {
@@ -128,8 +125,6 @@ export class RecentDirectoriesView extends ViewPane {
 
 	private dirs: ITreeElement<Directory>[] = [];
 
-	private contributedContextMenu!: IMenu;
-
 	constructor(
 		options: IViewletViewOptions,
 		@IThemeService themeService: IThemeService,
@@ -141,7 +136,6 @@ export class RecentDirectoriesView extends ViewPane {
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IOpenerService openerService: IOpenerService,
 		@ITelemetryService telemetryService: ITelemetryService,
-		@IMenuService private readonly menuService: IMenuService,
 		@IRecentDirectoriesManager private readonly recentDirectoriesManager: IRecentDirectoriesManager,
 		@IExplorerService private readonly explorerService: IExplorerService,
 		@IBookmarksManager private readonly bookmarksManager: IBookmarksManager
@@ -149,20 +143,6 @@ export class RecentDirectoriesView extends ViewPane {
 		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
 
 		this._register(this.recentDirectoriesManager.onRecentDirectoriesChanged(() => this.refreshView()));
-
-		this._register(this.bookmarksManager.onBookmarksChanged(e => {
-			if (this.dirs.find(dir => dir.element.resource.toString() === e.uri.toString())) {
-				const bookmarkIcon = document.getElementById('bookmarkIconRecentDirectoryContainer_' + e.uri.toString());
-				if (bookmarkIcon) {
-					bookmarkIcon.className = bookmarkClass(e.bookmarkType);
-					if (e.bookmarkType === BookmarkType.NONE) {
-						bookmarkIcon.style.visibility = 'hidden';
-					} else {
-						bookmarkIcon.style.visibility = 'visible';
-					}
-				}
-			}
-		}));
 	}
 
 	renderBody(container: HTMLElement): void {
@@ -200,6 +180,20 @@ export class RecentDirectoriesView extends ViewPane {
 			const bookmarkIcon = document.getElementById('bookmarkIconRecentDirectoryContainer_' + e.element?.resource.toString());
 			if (bookmarkIcon && e.element && this.bookmarksManager.getBookmarkType(e.element.resource) === BookmarkType.NONE) {
 				bookmarkIcon.style.visibility = 'hidden';
+			}
+		}));
+
+		this._register(this.bookmarksManager.onBookmarksChanged(e => {
+			if (!this.isVisible) {
+				return;
+			}
+
+			this.bookmarksManager.changeTypeAndDisplay('bookmarkIconRecentDirectoryContainer_' + e.uri.toString(), e.bookmarkType);
+		}));
+
+		this._register(this.onDidChangeExpansionState(visible => {
+			if (visible) {
+				this.refreshView();
 			}
 		}));
 	}
