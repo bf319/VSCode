@@ -168,7 +168,7 @@ export class RecentDirectoriesView extends ViewPane {
 		this._register(this.fileService.onDidFilesChange(e => {
 			const deleted = e.getDeleted().filter(file => this.dirs.find(recentDir => recentDir.element.resource.toString() === file.resource.toString()));
 			const added = e.getAdded().filter(file => this.dirs.find(recentDir => recentDir.element.resource.toString() === file.resource.toString()));
-			if (added || deleted) {
+			if (added.length > 0 || deleted.length > 0) {
 				this.refreshView();
 			}
 		}));
@@ -220,6 +220,7 @@ export class RecentDirectoriesView extends ViewPane {
 
 	private refreshView(): void {
 		if (!this.canRefresh) {
+			setTimeout(() => this.refreshView(), 100);
 			return;
 		}
 		this.canRefresh = false;
