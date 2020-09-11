@@ -72,7 +72,7 @@ export class ExplorerService implements IExplorerService {
 				}
 			}
 		}));
-		this.disposables.add(this.model.onDidChangeRoots(() => {
+		this.disposables.add(this.model.onDidChangeWorkspaceFolders(() => {
 			if (this.view) {
 				this.view.setTreeInput().then(() => this._onDidChangeRoot.fire());
 			}
@@ -149,6 +149,7 @@ export class ExplorerService implements IExplorerService {
 				if (fileToSelect && resource.toString() === this.roots[0].resource.toString()) {
 					this.view?.selectResource(fileToSelect);
 				}
+				this._onDidChangeRoot.fire();
 			}));
 	}
 

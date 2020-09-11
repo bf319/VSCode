@@ -5,7 +5,7 @@
 
 import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
 import { URI } from 'vs/base/common/uri';
-import { IBookmarksManager, BookmarkType, SortType } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
+import { IBookmarksManager, BookmarkType, SortType, bookmarkClass } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
 import { Emitter } from 'vs/base/common/event';
 
 export class BookmarksManager implements IBookmarksManager {
@@ -121,5 +121,20 @@ export class BookmarksManager implements IBookmarksManager {
 
 	private saveGlobalBookmarks(): void {
 		this.storageService.store(BookmarksManager.GLOBAL_BOOKMARKS_STORAGE_KEY, JSON.stringify(Array.from(this.globalBookmarks)), StorageScope.GLOBAL);
+	}
+
+	public changeTypeAndDisplay(bookmarkId: string, scope: BookmarkType): void {
+		const element = document.getElementById(bookmarkId);
+		if (!element) {
+			return;
+		}
+
+		if (scope === BookmarkType.NONE) {
+			element.style.visibility = 'hidden';
+		} else {
+			element.style.visibility = 'visible';
+		}
+
+		element.className = bookmarkClass(scope);
 	}
 }
