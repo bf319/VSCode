@@ -247,7 +247,6 @@ export class RecentDirectoriesView extends ViewPane {
 			});
 		}
 		this.dirs.reverse();
-		console.log(this.dirs.length);
 	}
 }
 
