@@ -64,6 +64,7 @@ class RecentDirectoryElementIconRenderer extends DirectoryElementIconRenderer {
 		this._bookmarkIcon.id = 'bookmarkIconRecentDirectoryContainer_' + this.stat.toString();
 		this._bookmarkIcon.className = bookmarkClass(bookmarkType);
 		this._bookmarkIcon.onclick = () => this.bookmarksManager.toggleBookmarkType(this.stat);
+		this._bookmarkIcon.style.paddingRight = '10px';
 
 		if (bookmarkType === BookmarkType.NONE) {
 			this._bookmarkIcon.style.visibility = 'hidden';
