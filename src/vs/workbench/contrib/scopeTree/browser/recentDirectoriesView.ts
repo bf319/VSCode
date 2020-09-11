@@ -28,6 +28,7 @@ import { createMatches, FuzzyScore } from 'vs/base/common/filters';
 import { ITreeNode, ITreeElement } from 'vs/base/browser/ui/tree/tree';
 import { bookmarkClass, IBookmarksManager, BookmarkType } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
 import { Directory, IDirectoryTemplateData, DirectoryElementIconRenderer, DirectoryRenderer } from 'vs/workbench/contrib/scopeTree/browser/directoryViewer';
+import { IFileService } from 'vs/platform/files/common/files';
 
 export class DirectoryDelegate implements IListVirtualDelegate<Directory> {
 	static readonly ITEM_HEIGHT = 22;
@@ -87,7 +88,8 @@ class RecentDirectoryRenderer extends DirectoryRenderer {
 	constructor(
 		labels: ResourceLabels,
 		explorerService: IExplorerService,
-		private readonly bookmarksManager: IBookmarksManager
+		private readonly bookmarksManager: IBookmarksManager,
+		private readonly fileService: IFileService
 	) {
 		super(labels, explorerService);
 	}
@@ -112,7 +114,9 @@ class RecentDirectoryRenderer extends DirectoryRenderer {
 			name: dir.getName(),
 			description: dir.getParent().toString()
 		}, {
-			matches: createMatches(filterData)
+			matches: createMatches(filterData),
+			strikethrough: !dir.exists,
+			title: dir.exists ? undefined : 'Directory was deleted'
 		});
 
 		return new RecentDirectoryElementIconRenderer(templateData.label.element, dir.resource, this.explorerService, this.bookmarksManager);
@@ -127,8 +131,10 @@ export class RecentDirectoriesView extends ViewPane {
 	private tree!: WorkbenchObjectTree<Directory>;
 
 	private dirs: ITreeElement<Directory>[] = [];
+	private canRefresh: boolean = true;
 
 	private contributedContextMenu!: IMenu;
+
 
 	constructor(
 		options: IViewletViewOptions,
@@ -144,7 +150,8 @@ export class RecentDirectoriesView extends ViewPane {
 		@IMenuService private readonly menuService: IMenuService,
 		@IRecentDirectoriesManager private readonly recentDirectoriesManager: IRecentDirectoriesManager,
 		@IExplorerService private readonly explorerService: IExplorerService,
-		@IBookmarksManager private readonly bookmarksManager: IBookmarksManager
+		@IBookmarksManager private readonly bookmarksManager: IBookmarksManager,
+		@IFileService private readonly fileService: IFileService
 	) {
 		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
 
@@ -163,6 +170,14 @@ export class RecentDirectoriesView extends ViewPane {
 				}
 			}
 		}));
+
+		this._register(this.fileService.onDidFilesChange(e => {
+			const deleted = e.getDeleted().filter(file => this.dirs.find(recentDir => recentDir.element.resource.toString() === file.resource.toString()));
+			const added = e.getAdded().filter(file => this.dirs.find(recentDir => recentDir.element.resource.toString() === file.resource.toString()));
+			if (added || deleted) {
+				this.refreshView();
+			}
+		}));
 	}
 
 	renderBody(container: HTMLElement): void {
@@ -170,7 +185,7 @@ export class RecentDirectoriesView extends ViewPane {
 
 		this.labels = this.instantiationService.createInstance(ResourceLabels, { onDidChangeVisibility: this.onDidChangeBodyVisibility });
 		this.tree = <WorkbenchObjectTree<Directory>>this.instantiationService.createInstance(WorkbenchObjectTree, 'RecentDirectories', container,
-			new DirectoryDelegate(), [new RecentDirectoryRenderer(this.labels, this.explorerService, this.bookmarksManager)],
+			new DirectoryDelegate(), [new RecentDirectoryRenderer(this.labels, this.explorerService, this.bookmarksManager, this.fileService)],
 			{
 				accessibilityProvider: {
 					getAriaLabel(element: Directory) {
@@ -209,17 +224,30 @@ export class RecentDirectoriesView extends ViewPane {
 		this.tree.layout(height, width);
 	}
 
-	private refreshView() {
-		this.getDirectoriesTreeElement(this.recentDirectoriesManager.recentDirectories);
-		this.tree.setChildren(null, this.dirs);
+	private refreshView(): void {
+		if (!this.canRefresh) {
+			return;
+		}
+		this.canRefresh = false;
+		this.getDirectoriesTreeElement(this.recentDirectoriesManager.recentDirectories).then(() => {
+			this.tree.setChildren(null, this.dirs);
+			this.canRefresh = true;
+		});
 	}
 
-	private getDirectoriesTreeElement(rawDirs: Set<string>) {
+	private async getDirectoriesTreeElement(rawDirs: Set<string>): Promise<void> {
 		this.dirs = [];
-		rawDirs.forEach(path => this.dirs.push({
-			element: new Directory(path)
-		}));
+
+		for (let path of rawDirs) {
+			const element = new Directory(path);
+			element.exists = await this.fileService.exists(element.resource);
+
+			this.dirs.push({
+				element: element
+			});
+		}
 		this.dirs.reverse();
+		console.log(this.dirs.length);
 	}
 }
 
