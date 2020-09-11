@@ -16,7 +16,6 @@ import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IViewletViewOptions } from 'vs/workbench/browser/parts/views/viewsViewlet';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
-import { IMenuService, IMenu } from 'vs/platform/actions/common/actions';
 import { URI } from 'vs/base/common/uri';
 import { IListVirtualDelegate, IKeyboardNavigationLabelProvider } from 'vs/base/browser/ui/list/list';
 import { IDisposable } from 'vs/base/common/lifecycle';
@@ -89,7 +88,6 @@ class RecentDirectoryRenderer extends DirectoryRenderer {
 		labels: ResourceLabels,
 		explorerService: IExplorerService,
 		private readonly bookmarksManager: IBookmarksManager,
-		private readonly fileService: IFileService
 	) {
 		super(labels, explorerService);
 	}
@@ -133,9 +131,6 @@ export class RecentDirectoriesView extends ViewPane {
 	private dirs: ITreeElement<Directory>[] = [];
 	private canRefresh: boolean = true;
 
-	private contributedContextMenu!: IMenu;
-
-
 	constructor(
 		options: IViewletViewOptions,
 		@IThemeService themeService: IThemeService,
@@ -147,7 +142,6 @@ export class RecentDirectoriesView extends ViewPane {
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IOpenerService openerService: IOpenerService,
 		@ITelemetryService telemetryService: ITelemetryService,
-		@IMenuService private readonly menuService: IMenuService,
 		@IRecentDirectoriesManager private readonly recentDirectoriesManager: IRecentDirectoriesManager,
 		@IExplorerService private readonly explorerService: IExplorerService,
 		@IBookmarksManager private readonly bookmarksManager: IBookmarksManager,
@@ -185,7 +179,7 @@ export class RecentDirectoriesView extends ViewPane {
 
 		this.labels = this.instantiationService.createInstance(ResourceLabels, { onDidChangeVisibility: this.onDidChangeBodyVisibility });
 		this.tree = <WorkbenchObjectTree<Directory>>this.instantiationService.createInstance(WorkbenchObjectTree, 'RecentDirectories', container,
-			new DirectoryDelegate(), [new RecentDirectoryRenderer(this.labels, this.explorerService, this.bookmarksManager, this.fileService)],
+			new DirectoryDelegate(), [new RecentDirectoryRenderer(this.labels, this.explorerService, this.bookmarksManager)],
 			{
 				accessibilityProvider: {
 					getAriaLabel(element: Directory) {
