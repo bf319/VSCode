@@ -20,7 +20,7 @@ import { IFileService } from 'vs/platform/files/common/files';
 import { ITextFileService } from 'vs/workbench/services/textfile/common/textfiles';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { IFileDialogService } from 'vs/platform/dialogs/common/dialogs';
-import { dirname } from 'vs/base/common/resources';
+import { isEqualOrParent, dirname } from 'vs/base/common/resources';
 import { URI } from 'vs/base/common/uri';
 
 // Handlers implementations for context menu actions
@@ -81,7 +81,16 @@ const sortBookmarksByDate: ICommandHandler = (accessor: ServicesAccessor) => {
 
 const displayBookmarkInFileTree: ICommandHandler = (accessor: ServicesAccessor, element: Directory | BookmarkHeader) => {
 	if (element && element instanceof Directory) {
-		accessor.get(IExplorerService).select(element.resource);
+		const explorerService = accessor.get(IExplorerService);
+		const rootResource = explorerService.roots[0].resource;
+		const selectedResource = element.resource;
+
+		const isChildOfCurrentRoot = isEqualOrParent(selectedResource, rootResource);
+		if (isChildOfCurrentRoot) {
+			explorerService.select(selectedResource);
+		} else {
+			explorerService.setRoot(selectedResource);
+		}
 	}
 };
 
