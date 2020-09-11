@@ -237,7 +237,6 @@ export class RecentDirectoriesView extends ViewPane {
 
 	private async getDirectoriesTreeElement(rawDirs: Set<string>): Promise<void> {
 		this.dirs = [];
-
 		for (let path of rawDirs) {
 			const element = new Directory(path);
 			element.exists = await this.fileService.exists(element.resource);
