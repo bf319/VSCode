@@ -85,7 +85,7 @@ export interface IDirectoryTemplateData {
 }
 
 export class DirectoryElementIconRenderer implements IDisposable {
-	private _focusIcon!: HTMLElement;
+	protected _focusIcon!: HTMLElement;
 
 	constructor(protected readonly container: HTMLElement,
 		protected readonly stat: URI,
