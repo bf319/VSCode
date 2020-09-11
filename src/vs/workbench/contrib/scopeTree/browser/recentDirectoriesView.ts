@@ -16,7 +16,6 @@ import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IViewletViewOptions } from 'vs/workbench/browser/parts/views/viewsViewlet';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
-import { IMenuService, IMenu } from 'vs/platform/actions/common/actions';
 import { URI } from 'vs/base/common/uri';
 import { IListVirtualDelegate, IKeyboardNavigationLabelProvider } from 'vs/base/browser/ui/list/list';
 import { IDisposable } from 'vs/base/common/lifecycle';
@@ -64,6 +63,7 @@ class RecentDirectoryElementIconRenderer extends DirectoryElementIconRenderer {
 		this._bookmarkIcon.id = 'bookmarkIconRecentDirectoryContainer_' + this.stat.toString();
 		this._bookmarkIcon.className = bookmarkClass(bookmarkType);
 		this._bookmarkIcon.onclick = () => this.bookmarksManager.toggleBookmarkType(this.stat);
+		this._bookmarkIcon.style.paddingRight = '10px';
 
 		if (bookmarkType === BookmarkType.NONE) {
 			this._bookmarkIcon.style.visibility = 'hidden';
@@ -125,8 +125,6 @@ export class RecentDirectoriesView extends ViewPane {
 
 	private dirs: ITreeElement<Directory>[] = [];
 
-	private contributedContextMenu!: IMenu;
-
 	constructor(
 		options: IViewletViewOptions,
 		@IThemeService themeService: IThemeService,
@@ -138,7 +136,6 @@ export class RecentDirectoriesView extends ViewPane {
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IOpenerService openerService: IOpenerService,
 		@ITelemetryService telemetryService: ITelemetryService,
-		@IMenuService private readonly menuService: IMenuService,
 		@IRecentDirectoriesManager private readonly recentDirectoriesManager: IRecentDirectoriesManager,
 		@IExplorerService private readonly explorerService: IExplorerService,
 		@IBookmarksManager private readonly bookmarksManager: IBookmarksManager

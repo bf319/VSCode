@@ -21,6 +21,7 @@ import { ITextFileService } from 'vs/workbench/services/textfile/common/textfile
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { IFileDialogService } from 'vs/platform/dialogs/common/dialogs';
 import { isEqualOrParent, dirname } from 'vs/base/common/resources';
+import { URI } from 'vs/base/common/uri';
 
 // Handlers implementations for context menu actions
 const addBookmark: ICommandHandler = (accessor: ServicesAccessor, scope: BookmarkType) => {
