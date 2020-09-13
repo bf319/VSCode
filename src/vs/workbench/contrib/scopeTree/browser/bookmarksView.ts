@@ -31,6 +31,7 @@ import { IAction } from 'vs/base/common/actions';
 import { createAndFillInContextMenuActions } from 'vs/platform/actions/browser/menuEntryActionViewItem';
 import { IMenu, IMenuService, MenuId } from 'vs/platform/actions/common/actions';
 import { Directory, IDirectoryTemplateData, DirectoryElementIconRenderer, DirectoryRenderer } from 'vs/workbench/contrib/scopeTree/browser/directoryViewer';
+import { IFileService } from 'vs/platform/files/common/files';
 
 export class BookmarkHeader {
 	expanded: boolean = true;
@@ -77,7 +78,9 @@ class BookmarkRenderer extends DirectoryRenderer {
 			name: bookmark.getName(),
 			description: bookmark.getParent()
 		}, {
-			matches: createMatches(filterData)
+			matches: createMatches(filterData),
+			strikethrough: !bookmark.exists,
+			title: bookmark.exists ? undefined : 'Does not exist'
 		});
 
 		return new DirectoryElementIconRenderer(templateData.label.element, bookmark.resource, this.explorerService);
@@ -159,6 +162,7 @@ export class BookmarksView extends ViewPane {
 	private contributedContextMenu!: IMenu;
 
 	private sortType: SortType = SortType.NAME;
+	private dirty: boolean = false;
 
 	constructor(
 		options: IViewletViewOptions,
@@ -174,6 +178,7 @@ export class BookmarksView extends ViewPane {
 		@IBookmarksManager private readonly bookmarksManager: IBookmarksManager,
 		@IExplorerService private readonly explorerService: IExplorerService,
 		@IMenuService private readonly menuService: IMenuService,
+		@IFileService private readonly fileService: IFileService
 	) {
 		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
 
@@ -191,7 +196,15 @@ export class BookmarksView extends ViewPane {
 
 		this._register(this.bookmarksManager.onDidSortBookmark(sortType => {
 			this.sortType = sortType;
-			this.sortAndRefresh(sortType);
+			this.markDirty();
+		}));
+
+		this._register(this.fileService.onDidFilesChange(e => {
+			const deleted = e.getDeleted().filter(file => this.workspaceBookmarks.find(bookmark => bookmark.element.resource.toString() === file.resource.toString()));
+			const added = e.getAdded().filter(file => this.workspaceBookmarks.find(bookmark => bookmark.element.resource.toString() === file.resource.toString()));
+			if (added.length > 0 || deleted.length > 0) {
+				this.markDirty();
+			}
 		}));
 	}
 
@@ -202,7 +215,7 @@ export class BookmarksView extends ViewPane {
 		this._register(this.tree);
 
 		this.tree.setChildren(null, [{ element: this.globalBookmarksHeader }, { element: this.workspaceBookmarksHeader }]);
-		this.sortAndRefresh(this.sortType);
+		this.markDirty();
 
 		this._register(this.tree.onMouseClick(e => {
 			if (e.element instanceof BookmarkHeader) {
@@ -219,9 +232,18 @@ export class BookmarksView extends ViewPane {
 		this.tree.layout(height, width);
 	}
 
-	private sortAndRefresh(sortType: SortType) {
+	private async sortAndRefresh(sortType: SortType) {
+		if (!this.dirty) {
+			return;
+		}
+		this.dirty = false;
+
 		this.globalBookmarks = Directory.getDirectoriesAsSortedTreeElements(this.bookmarksManager.globalBookmarks, sortType);
 		this.workspaceBookmarks = Directory.getDirectoriesAsSortedTreeElements(this.bookmarksManager.workspaceBookmarks, sortType);
+
+		for (let treeElement of this.workspaceBookmarks) {
+			treeElement.element.exists = await this.fileService.exists(treeElement.element.resource);
+		}
 
 		this.tree.setChildren(this.globalBookmarksHeader, this.globalBookmarks);
 		this.tree.setChildren(this.workspaceBookmarksHeader, this.workspaceBookmarks);
@@ -303,6 +325,8 @@ export class BookmarksView extends ViewPane {
 				this.tree.setChildren(this.globalBookmarksHeader, this.globalBookmarks);
 			}
 		}
+
+		this.markDirty();
 	}
 
 	private removeBookmark(resource: URI, prevType: BookmarkType): void {
@@ -318,6 +342,13 @@ export class BookmarksView extends ViewPane {
 			if (this.globalBookmarksHeader.expanded) {
 				this.tree.setChildren(this.globalBookmarksHeader, this.globalBookmarks);
 			}
+		}
+	}
+
+	private markDirty(): void {
+		if (!this.dirty) {
+			this.dirty = true;
+			setTimeout(() => this.sortAndRefresh(this.sortType));
 		}
 	}
 }

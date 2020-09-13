@@ -17,6 +17,7 @@ export class Directory {
 	private _resource: URI;
 	private _name: string;
 	private _parentName: string;
+	exists: boolean = true;
 
 	constructor(path: string) {
 		this._resource = URI.parse(path);
