@@ -114,7 +114,7 @@ class RecentDirectoryRenderer extends DirectoryRenderer {
 		}, {
 			matches: createMatches(filterData),
 			strikethrough: !dir.exists,
-			title: dir.exists ? undefined : 'Directory was deleted'
+			title: dir.exists ? undefined : 'Does not exist'
 		});
 
 		return new RecentDirectoryElementIconRenderer(templateData.label.element, dir.resource, this.explorerService, this.bookmarksManager);
@@ -129,7 +129,7 @@ export class RecentDirectoriesView extends ViewPane {
 	private tree!: WorkbenchObjectTree<Directory>;
 
 	private dirs: ITreeElement<Directory>[] = [];
-	private canRefresh: boolean = true;
+	private dirty: boolean = false;
 
 	constructor(
 		options: IViewletViewOptions,
@@ -149,7 +149,7 @@ export class RecentDirectoriesView extends ViewPane {
 	) {
 		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
 
-		this._register(this.recentDirectoriesManager.onRecentDirectoriesChanged(() => this.refreshView()));
+		this._register(this.recentDirectoriesManager.onRecentDirectoriesChanged(() => this.markDirty()));
 
 		this._register(this.bookmarksManager.onBookmarksChanged(e => {
 			if (this.dirs.find(dir => dir.element.resource.toString() === e.uri.toString())) {
@@ -169,7 +169,7 @@ export class RecentDirectoriesView extends ViewPane {
 			const deleted = e.getDeleted().filter(file => this.dirs.find(recentDir => recentDir.element.resource.toString() === file.resource.toString()));
 			const added = e.getAdded().filter(file => this.dirs.find(recentDir => recentDir.element.resource.toString() === file.resource.toString()));
 			if (added.length > 0 || deleted.length > 0) {
-				this.refreshView();
+				this.markDirty();
 			}
 		}));
 	}
@@ -196,7 +196,7 @@ export class RecentDirectoriesView extends ViewPane {
 		this._register(this.labels);
 		this._register(this.tree);
 
-		this.refreshView();
+		this.markDirty();
 
 		this._register(this.tree.onMouseOver(e => {
 			const bookmarkIcon = document.getElementById('bookmarkIconRecentDirectoryContainer_' + e.element?.resource.toString());
@@ -219,15 +219,12 @@ export class RecentDirectoriesView extends ViewPane {
 	}
 
 	private refreshView(): void {
-		if (!this.canRefresh) {
-			setTimeout(() => this.refreshView(), 100);
-			return;
+		if (this.dirty) {
+			this.dirty = false;
+			this.getDirectoriesTreeElement(this.recentDirectoriesManager.recentDirectories).then(() => {
+				this.tree.setChildren(null, this.dirs);
+			});
 		}
-		this.canRefresh = false;
-		this.getDirectoriesTreeElement(this.recentDirectoriesManager.recentDirectories).then(() => {
-			this.tree.setChildren(null, this.dirs);
-			this.canRefresh = true;
-		});
 	}
 
 	private async getDirectoriesTreeElement(rawDirs: Set<string>): Promise<void> {
@@ -241,6 +238,15 @@ export class RecentDirectoriesView extends ViewPane {
 			});
 		}
 		this.dirs.reverse();
+	}
+
+	private markDirty() {
+		if (!this.dirty) {
+			this.dirty = true;
+			setTimeout(() => this.refreshView(), 100);
+		} else {
+			this.refreshView();
+		}
 	}
 }
 
