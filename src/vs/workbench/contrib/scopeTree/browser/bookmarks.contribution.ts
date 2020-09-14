@@ -30,9 +30,7 @@ const addBookmark: ICommandHandler = (accessor: ServicesAccessor, scope: Bookmar
 	const stats = explorerService.getContext(/*respectMultiSelection = */ true);
 
 	for (let stat of stats) {
-		if (stat.isDirectory) {
-			bookmarksManager.addBookmark(stat.resource, scope);
-		}
+		bookmarksManager.addBookmark(stat.resource, scope);
 	}
 };
 
