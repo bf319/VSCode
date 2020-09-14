@@ -326,8 +326,7 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 						}
 					}
 
-					const toWrite: string[] = Directory.getDirectoriesAsSortedTreeElements(workspaceBookmarks, SortType.NAME)
-						.map(treeElement => treeElement.element.resource.toString());
+					const toWrite: string[] = (Array.from(workspaceBookmarks)).sort();
 
 					let fileContents: string = '';
 
