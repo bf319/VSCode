@@ -31,9 +31,7 @@ const addBookmark: ICommandHandler = (accessor: ServicesAccessor, scope: Bookmar
 	const stats = explorerService.getContext(/*respectMultiSelection = */ true);
 
 	for (let stat of stats) {
-		if (stat.isDirectory) {
-			bookmarksManager.addBookmark(stat.resource, scope);
-		}
+		bookmarksManager.addBookmark(stat.resource, scope);
 	}
 };
 
@@ -279,19 +277,19 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 	handler: (accessor: ServicesAccessor) => {
 		const bookmarksManager = accessor.get(IBookmarksManager);
 		const textFileService = accessor.get(ITextFileService);
-		const contextService = accessor.get(IWorkspaceContextService);
 		const fileDialogService = accessor.get(IFileDialogService);
 		const fileService = accessor.get(IFileService);
 		const editorService = accessor.get(IEditorService);
 		const dialogService = accessor.get(IDialogService);
+		const explorerService = accessor.get(IExplorerService);
 
 		const workspaceBookmarks = new Set(bookmarksManager.workspaceBookmarks);
-		const workspaceFolder = contextService.getWorkspace().folders[0];
-		if (!workspaceFolder) {
+		const roots = explorerService.roots;
+		if (roots.length === 0) {
 			return;
 		}
 
-		const defaultPath = URI.joinPath(workspaceFolder.uri, 'blueprint');
+		const defaultPath = URI.joinPath(roots[0].resource, 'blueprint');
 		fileDialogService.showSaveDialog({ title: 'Save Bookmarks As...', defaultUri: defaultPath, filters: [{ name: 'Blueprint files', extensions: ['bookmarks'] }] })
 			.then(newPath => {
 				if (!newPath) {
@@ -355,11 +353,15 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 		const bookmarksManager = accessor.get(IBookmarksManager);
 		const fileService = accessor.get(IFileService);
 		const fileDialogService = accessor.get(IFileDialogService);
-		const contextService = accessor.get(IWorkspaceContextService);
 		const dialogService = accessor.get(IDialogService);
+		const explorerService = accessor.get(IExplorerService);
 
-		const workspaceFolder = contextService.getWorkspace().folders[0];
-		fileDialogService.showOpenDialog({ defaultUri: workspaceFolder.uri, canSelectFiles: true, canSelectMany: false, filters: [{ name: 'Blueprint files', extensions: ['bookmarks'] }] })
+		const roots = explorerService.roots;
+		if (roots.length === 0) {
+			return;
+		}
+
+		fileDialogService.showOpenDialog({ defaultUri: roots[0].resource, canSelectFiles: true, canSelectMany: false, filters: [{ name: 'Blueprint files', extensions: ['bookmarks'] }] })
 			.then(resources => {
 				if (!resources || resources.length === 0) {
 					return;

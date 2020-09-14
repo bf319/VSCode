@@ -310,7 +310,6 @@ export class ExplorerView extends ViewPane {
 		breadcrumbBackground.style.height = `${ExplorerDelegate.ITEM_HEIGHT}px`;
 
 		DOM.addClass(this.breadcrumb, 'breadcrumb-file-tree');
-		DOM.addClass(breadcrumbBackground, 'breadcrumb-background');
 		DOM.append(container, parentContainer);
 		DOM.append(breadcrumbBackground, this.breadcrumb);
 

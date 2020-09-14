@@ -27,6 +27,7 @@ import { createMatches, FuzzyScore } from 'vs/base/common/filters';
 import { ITreeNode, ITreeElement } from 'vs/base/browser/ui/tree/tree';
 import { bookmarkClass, IBookmarksManager, BookmarkType } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
 import { Directory, IDirectoryTemplateData, DirectoryElementIconRenderer, DirectoryRenderer } from 'vs/workbench/contrib/scopeTree/browser/directoryViewer';
+import { IFileService } from 'vs/platform/files/common/files';
 
 export class DirectoryDelegate implements IListVirtualDelegate<Directory> {
 	static readonly ITEM_HEIGHT = 22;
@@ -109,7 +110,9 @@ class RecentDirectoryRenderer extends DirectoryRenderer {
 			name: dir.getName(),
 			description: dir.getParent().toString()
 		}, {
-			matches: createMatches(filterData)
+			matches: createMatches(filterData),
+			strikethrough: !dir.exists,
+			title: dir.exists ? undefined : 'Does not exist'
 		});
 
 		return new RecentDirectoryElementIconRenderer(templateData.label.element, dir.resource, this.explorerService, this.bookmarksManager);
@@ -124,6 +127,7 @@ export class RecentDirectoriesView extends ViewPane {
 	private tree!: WorkbenchObjectTree<Directory>;
 
 	private dirs: ITreeElement<Directory>[] = [];
+	private dirty: boolean = false;
 
 	constructor(
 		options: IViewletViewOptions,
@@ -138,11 +142,34 @@ export class RecentDirectoriesView extends ViewPane {
 		@ITelemetryService telemetryService: ITelemetryService,
 		@IRecentDirectoriesManager private readonly recentDirectoriesManager: IRecentDirectoriesManager,
 		@IExplorerService private readonly explorerService: IExplorerService,
-		@IBookmarksManager private readonly bookmarksManager: IBookmarksManager
+		@IBookmarksManager private readonly bookmarksManager: IBookmarksManager,
+		@IFileService private readonly fileService: IFileService
 	) {
 		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
 
-		this._register(this.recentDirectoriesManager.onRecentDirectoriesChanged(() => this.refreshView()));
+		this._register(this.recentDirectoriesManager.onRecentDirectoriesChanged(() => this.markDirty()));
+
+		this._register(this.bookmarksManager.onBookmarksChanged(e => {
+			if (this.dirs.find(dir => dir.element.resource.toString() === e.uri.toString())) {
+				const bookmarkIcon = document.getElementById('bookmarkIconRecentDirectoryContainer_' + e.uri.toString());
+				if (bookmarkIcon) {
+					bookmarkIcon.className = bookmarkClass(e.bookmarkType);
+					if (e.bookmarkType === BookmarkType.NONE) {
+						bookmarkIcon.style.visibility = 'hidden';
+					} else {
+						bookmarkIcon.style.visibility = 'visible';
+					}
+				}
+			}
+		}));
+
+		this._register(this.fileService.onDidFilesChange(e => {
+			const deleted = e.getDeleted().filter(file => this.dirs.find(recentDir => recentDir.element.resource.toString() === file.resource.toString()));
+			const added = e.getAdded().filter(file => this.dirs.find(recentDir => recentDir.element.resource.toString() === file.resource.toString()));
+			if (added.length > 0 || deleted.length > 0) {
+				this.markDirty();
+			}
+		}));
 	}
 
 	renderBody(container: HTMLElement): void {
@@ -167,7 +194,7 @@ export class RecentDirectoriesView extends ViewPane {
 		this._register(this.labels);
 		this._register(this.tree);
 
-		this.refreshView();
+		this.markDirty();
 
 		this._register(this.tree.onMouseOver(e => {
 			const bookmarkIcon = document.getElementById('bookmarkIconRecentDirectoryContainer_' + e.element?.resource.toString());
@@ -203,17 +230,33 @@ export class RecentDirectoriesView extends ViewPane {
 		this.tree.layout(height, width);
 	}
 
-	private refreshView() {
-		this.getDirectoriesTreeElement(this.recentDirectoriesManager.recentDirectories);
-		this.tree.setChildren(null, this.dirs);
+	private refreshView(): void {
+		if (this.dirty) {
+			this.dirty = false;
+			this.getDirectoriesTreeElement(this.recentDirectoriesManager.recentDirectories).then(() => {
+				this.tree.setChildren(null, this.dirs);
+			});
+		}
 	}
 
-	private getDirectoriesTreeElement(rawDirs: Set<string>) {
+	private async getDirectoriesTreeElement(rawDirs: Set<string>): Promise<void> {
 		this.dirs = [];
-		rawDirs.forEach(path => this.dirs.push({
-			element: new Directory(path)
-		}));
+		for (let path of rawDirs) {
+			const element = new Directory(path);
+			element.exists = await this.fileService.exists(element.resource);
+
+			this.dirs.push({
+				element: element
+			});
+		}
 		this.dirs.reverse();
+	}
+
+	private markDirty() {
+		if (!this.dirty) {
+			this.dirty = true;
+			setTimeout(() => this.refreshView(), 100);
+		}
 	}
 }
 
