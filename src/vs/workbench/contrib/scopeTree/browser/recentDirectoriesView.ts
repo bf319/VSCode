@@ -49,6 +49,8 @@ class RecentDirectoryElementIconRenderer extends DirectoryElementIconRenderer {
 		explorerService: IExplorerService,
 		private readonly bookmarksManager: IBookmarksManager) {
 		super(container, stat, explorerService);
+		this._focusIcon.style.paddingLeft = '5px';
+
 		this.renderBookmarkIcon();
 	}
 
@@ -61,18 +63,14 @@ class RecentDirectoryElementIconRenderer extends DirectoryElementIconRenderer {
 		this._bookmarkIcon = document.createElement('img');
 		this._bookmarkIcon.id = 'bookmarkIconRecentDirectoryContainer_' + this.stat.toString();
 		this._bookmarkIcon.className = bookmarkClass(bookmarkType);
-		this._bookmarkIcon.onclick = () => {
-			const newType = this.bookmarksManager.toggleBookmarkType(this.stat);
-			this._bookmarkIcon.className = bookmarkClass(newType);
-		};
+		this._bookmarkIcon.onclick = () => this.bookmarksManager.toggleBookmarkType(this.stat);
+		this._bookmarkIcon.style.paddingRight = '10px';
 
 		if (bookmarkType === BookmarkType.NONE) {
 			this._bookmarkIcon.style.visibility = 'hidden';
 		}
 
-		if (this.container.firstChild) {
-			this.container.insertBefore(this._bookmarkIcon, this.container.firstChild?.nextSibling);
-		}
+		this.container.appendChild(this._bookmarkIcon);
 	}
 
 	dispose(): void {
@@ -209,6 +207,20 @@ export class RecentDirectoriesView extends ViewPane {
 			const bookmarkIcon = document.getElementById('bookmarkIconRecentDirectoryContainer_' + e.element?.resource.toString());
 			if (bookmarkIcon && e.element && this.bookmarksManager.getBookmarkType(e.element.resource) === BookmarkType.NONE) {
 				bookmarkIcon.style.visibility = 'hidden';
+			}
+		}));
+
+		this._register(this.bookmarksManager.onBookmarksChanged(e => {
+			if (!this.isVisible) {
+				return;
+			}
+
+			this.bookmarksManager.changeTypeAndDisplay('bookmarkIconRecentDirectoryContainer_' + e.uri.toString(), e.bookmarkType);
+		}));
+
+		this._register(this.onDidChangeExpansionState(visible => {
+			if (visible) {
+				this.refreshView();
 			}
 		}));
 	}

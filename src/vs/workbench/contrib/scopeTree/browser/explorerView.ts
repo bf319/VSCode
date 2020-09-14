@@ -362,13 +362,14 @@ export class ExplorerView extends ViewPane {
 			}
 		}));
 
-		this.onDidChangeExpansionState(e => {
-			if (e) {
+		this._register(this.onDidChangeExpansionState(async visible => {
+			if (visible) {
 				DOM.show(breadcrumbBackground);
+				await this.setTreeInput();
 			} else {
 				DOM.hide(breadcrumbBackground);
 			}
-		});
+		}));
 
 		this._register(this.tree.onMouseOver(e => {
 			const resource = e.element?.resource.toString();
@@ -394,6 +395,14 @@ export class ExplorerView extends ViewPane {
 			if (bookmarkIconContainer && e.element && !this.bookmarksManager.getBookmarkType(e.element.resource)) {
 				bookmarkIconContainer.style.visibility = 'hidden';
 			}
+		}));
+
+		this._register(this.bookmarksManager.onBookmarksChanged(e => {
+			if (!this.isVisible) {
+				return;
+			}
+
+			this.bookmarksManager.changeTypeAndDisplay('bookmarkIconContainer_' + e.uri.toString(), e.bookmarkType);
 		}));
 	}
 

@@ -595,6 +595,10 @@ export class ExplorerView extends ViewPane {
 		return DOM.getLargestChildWidth(parentNode, childNodes);
 	}
 
+	findAdjacentSibling(deleted: ExplorerItem): URI | undefined {
+		throw new Error('Method not implemented.');
+	}
+
 	async setTreeInput(): Promise<void> {
 		if (!this.isBodyVisible()) {
 			this.shouldRefresh = true;
