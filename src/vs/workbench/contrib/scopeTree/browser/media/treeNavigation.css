@@ -13,10 +13,6 @@
 	text-overflow: ellipsis;
 }
 
-.breadcrumb-background {
-	background-color: #eee;
-}
-
 .breadcrumb-element {
 	display: inline;
 }
