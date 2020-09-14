@@ -11,6 +11,7 @@ export interface IBookmarksManager {
 	readonly _serviceBrand: undefined;
 	readonly globalBookmarks: Set<string>;
 	readonly workspaceBookmarks: Set<string>;
+	sortType: SortType;
 
 	addBookmark(resource: URI, scope: BookmarkType): void;
 	getBookmarkType(resource: URI): BookmarkType;

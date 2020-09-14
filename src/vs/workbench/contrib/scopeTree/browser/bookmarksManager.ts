@@ -17,6 +17,8 @@ export class BookmarksManager implements IBookmarksManager {
 	globalBookmarks: Set<string> = new Set();
 	workspaceBookmarks: Set<string> = new Set();
 
+	sortType: SortType = SortType.NAME;
+
 	private _onBookmarksChanged = new Emitter<{ uri: URI, bookmarkType: BookmarkType, prevBookmarkType: BookmarkType }>();
 	public onBookmarksChanged = this._onBookmarksChanged.event;
 
@@ -90,6 +92,7 @@ export class BookmarksManager implements IBookmarksManager {
 	}
 
 	public sortBookmarks(sortType: SortType) {
+		this.sortType = sortType;
 		this._onDidSortBookmark.fire(sortType);
 	}
 
