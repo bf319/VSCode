@@ -366,8 +366,9 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 				}
 
 				fileService.readFile(resources[0]).then(async bookmarksRaw => {
-					const blueprints = new Set(bookmarksRaw.value.toString().split('\n'));
-					if (blueprints.size > 200) {
+					const contents = bookmarksRaw.value.toString().split('\n');
+					const blueprints = new Set(contents);
+					if (contents.length > 200) {
 						await dialogService.show(Severity.Error, 'Cannot import more than 200 bookmarks at a time', ['Ok']);
 						return;
 					}
