@@ -19,9 +19,10 @@ import { Directory } from 'vs/workbench/contrib/scopeTree/browser/directoryViewe
 import { IFileService } from 'vs/platform/files/common/files';
 import { ITextFileService } from 'vs/workbench/services/textfile/common/textfiles';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
-import { IFileDialogService } from 'vs/platform/dialogs/common/dialogs';
+import { IFileDialogService, IDialogService } from 'vs/platform/dialogs/common/dialogs';
 import { isEqualOrParent, dirname } from 'vs/base/common/resources';
 import { URI } from 'vs/base/common/uri';
+import Severity from 'vs/base/common/severity';
 
 // Handlers implementations for context menu actions
 const addBookmark: ICommandHandler = (accessor: ServicesAccessor, scope: BookmarkType) => {
@@ -279,6 +280,7 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 		const fileDialogService = accessor.get(IFileDialogService);
 		const fileService = accessor.get(IFileService);
 		const editorService = accessor.get(IEditorService);
+		const dialogService = accessor.get(IDialogService);
 		const explorerService = accessor.get(IExplorerService);
 
 		const workspaceBookmarks = new Set(bookmarksManager.workspaceBookmarks);
@@ -298,15 +300,47 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 					if (exists) {
 						// Bookmarks need to be merged
 						const blueprintsRaw = (await fileService.readFile(newPath)).value.toString();
-						const prevBookmarks = new Set(JSON.parse(blueprintsRaw) as string[]);
-						prevBookmarks.forEach(bookmark => {
-							workspaceBookmarks.add(bookmark);
-						});
+						const prevBookmarks = new Set(blueprintsRaw.split('\n'));
+
+						let shouldOverwrite = false;
+						for (let resource of prevBookmarks) {
+							if (URI.parse(resource).scheme !== 'file' && /*Remove this after demo*/URI.parse(resource).scheme !== 'memfs') {
+								await dialogService.show(Severity.Warning, 'Merging bookmarks is not possible because the selected file contains invalid paths', ['Overwrite', 'Cancel'], { cancelId: -1 })
+									.then(selection => {
+										const choice = selection.choice;
+										if (choice) {
+											return;	// User refused to choose or selected 'Cancel'
+										}
+
+										shouldOverwrite = true;	// 'Overwrite' was selected
+									});
+
+								break;
+							}
+						}
+
+						if (!shouldOverwrite) {
+							prevBookmarks.forEach(bookmark => {
+								workspaceBookmarks.add(bookmark);
+							});
+						}
 					}
 
-					const toWrite = Array.from(workspaceBookmarks).sort((path1, path2) => (path1 < path2) ? -1 : 1);	//Equality cannot happen because we have a set
-					textFileService.create(newPath, JSON.stringify(toWrite, undefined, '\t' /* Insert tab and new line before resource */), { overwrite: true }).then(() => editorService.openEditor({ resource: newPath }));
+					const toWrite: string[] = Directory.getDirectoriesAsSortedTreeElements(workspaceBookmarks, SortType.NAME)
+						.map(treeElement => treeElement.element.resource.toString());
 
+					let fileContents: string = '';
+
+					for (let i = 0; i < toWrite.length; i++) {
+						const path = toWrite[i];
+						fileContents = fileContents.concat(path);
+
+						if (i < toWrite.length - 1) {
+							fileContents = fileContents.concat('\n');
+						}
+					}
+
+					textFileService.create(newPath, fileContents, { overwrite: true }).then(() => editorService.openEditor({ resource: newPath }));
 				});
 			});
 	}
@@ -319,6 +353,7 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 		const bookmarksManager = accessor.get(IBookmarksManager);
 		const fileService = accessor.get(IFileService);
 		const fileDialogService = accessor.get(IFileDialogService);
+		const dialogService = accessor.get(IDialogService);
 		const explorerService = accessor.get(IExplorerService);
 
 		const roots = explorerService.roots;
@@ -332,8 +367,21 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 					return;
 				}
 
-				fileService.readFile(resources[0]).then(bookmarksRaw => {
-					const blueprints = new Set(JSON.parse(bookmarksRaw.value.toString()) as string[]);
+				fileService.readFile(resources[0]).then(async bookmarksRaw => {
+					const contents = bookmarksRaw.value.toString().split('\n');
+					const blueprints = new Set(contents);
+					if (contents.length > 200) {
+						await dialogService.show(Severity.Error, 'Cannot import more than 200 bookmarks at a time', ['Ok']);
+						return;
+					}
+
+					for (let res of blueprints) {
+						if (URI.parse(res).scheme !== 'file' && /*Remove this after demo*/URI.parse(res).scheme !== 'memfs') {
+							await dialogService.show(Severity.Error, 'Some values in this file are not valid paths', ['Ok']);
+							return;
+						}
+					}
+
 					blueprints.forEach(res => {
 						bookmarksManager.addBookmark(URI.parse(res), BookmarkType.WORKSPACE);
 					});
