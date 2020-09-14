@@ -223,8 +223,29 @@ export class BookmarksView extends ViewPane {
 			}
 		}));
 
+		this._register(this.tree.onMouseDblClick(e => {
+			const dir = e.element;
+			if (dir instanceof Directory && dir.exists) {
+				this.explorerService.selectOrSetRoot(dir.resource);
+			}
+		}));
+
 		this.contributedContextMenu = this.menuService.createMenu(MenuId.DisplayBookmarksContext, this.tree.contextKeyService);
 		this.tree.onContextMenu(e => this.onContextMenu(e));
+
+		this._register(this.tree.onKeyDown(e => {
+			if (e.key !== 'Enter') {
+				return;
+			}
+
+			const selection = this.tree.getSelection();
+			if (selection.length === 1) {
+				const dir = selection[0];
+				if (dir instanceof Directory && dir.exists) {
+					this.explorerService.selectOrSetRoot(dir.resource);
+				}
+			}
+		}));
 	}
 
 	protected layoutBody(height: number, width: number): void {
