@@ -430,14 +430,14 @@ export class FilesRenderer implements ICompressibleTreeRenderer<ExplorerItem, Fu
 
 		if (stat.isDirectory) {
 			focusIcon.iconContainer.onclick = () => this.explorerService.setRoot(stat.resource);
-
-			if (this.bookmarksManager) {
-				const bookmarkIcon = new BookmarkIconRenderer(stat, this.bookmarksManager);
-				templateData.label.element.appendChild(bookmarkIcon.iconContainer);
-				disposables.add(bookmarkIcon);
-			}
 		} else {
 			focusIcon.iconContainer.style.opacity = '0';
+		}
+
+		if (this.bookmarksManager) {
+			const bookmarkIcon = new BookmarkIconRenderer(stat, this.bookmarksManager);
+			templateData.label.element.appendChild(bookmarkIcon.iconContainer);
+			disposables.add(bookmarkIcon);
 		}
 
 		disposables.add(focusIcon);
