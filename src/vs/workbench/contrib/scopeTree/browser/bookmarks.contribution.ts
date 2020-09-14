@@ -306,7 +306,7 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 
 						let shouldOverwrite = false;
 						for (let resource of prevBookmarks) {
-							if (!URI.parse(resource)) {
+							if (URI.parse(resource).scheme !== 'file' && /*Remove this after demo*/URI.parse(resource).scheme !== 'memfs') {
 								await dialogService.show(Severity.Warning, 'Merging bookmarks is not possible because the selected file contains invalid paths', ['Overwrite', 'Cancel'], { cancelId: -1 })
 									.then(selection => {
 										const choice = selection.choice;
@@ -374,7 +374,7 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 					}
 
 					for (let res of blueprints) {
-						if (!URI.parse(res)) {
+						if (URI.parse(res).scheme !== 'file' && /*Remove this after demo*/URI.parse(res).scheme !== 'memfs') {
 							await dialogService.show(Severity.Error, 'Some values in this file are not valid paths', ['Ok']);
 							return;
 						}
