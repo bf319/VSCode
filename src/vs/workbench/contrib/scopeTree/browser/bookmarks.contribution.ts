@@ -267,6 +267,15 @@ MenuRegistry.appendMenuItem(MenuId.DisplayBookmarksContext, {
 	}
 });
 
+MenuRegistry.appendMenuItem(MenuId.DisplayBookmarksContext, {
+	group: '5_clear_panel',
+	order: 10,
+	command: {
+		id: 'clearInexistentBookmarks',
+		title: 'Clear workspace bookmarks'
+	}
+});
+
 KeybindingsRegistry.registerCommandAndKeybindingRule({
 	id: 'exportBookmarks',
 	weight: KeybindingWeight.WorkbenchContrib,
@@ -384,5 +393,28 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 
 				bookmarksManager.sortBookmarks(bookmarksManager.sortType);
 			});
+	}
+});
+
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+	id: 'clearInexistentBookmarks',
+	weight: KeybindingWeight.WorkbenchContrib,
+	handler: (accessor: ServicesAccessor) => {
+		const bookmarksManager = accessor.get(IBookmarksManager);
+		const fileService = accessor.get(IFileService);
+		const dialogService = accessor.get(IDialogService);
+		const workspaceBookmakrs = new Set(bookmarksManager.workspaceBookmarks);
+
+		dialogService.show(Severity.Info, 'This will remove all inexistent workspace bookmarks. Would you like to continue?', ['Yes', 'No'], { cancelId: 1 }).then(async selection => {
+			if (!selection.choice) {
+				for (let bookmark of workspaceBookmakrs) {
+					const resource = URI.parse(bookmark);
+					const exists = await fileService.exists(resource);
+					if (!exists) {
+						bookmarksManager.addBookmark(resource, BookmarkType.NONE);
+					}
+				}
+			}
+		});
 	}
 });
