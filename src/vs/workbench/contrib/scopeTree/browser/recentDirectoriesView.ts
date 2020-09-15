@@ -210,6 +210,27 @@ export class RecentDirectoriesView extends ViewPane {
 			}
 		}));
 
+		this._register(this.tree.onKeyDown(e => {
+			if (e.key !== 'Enter') {
+				return;
+			}
+
+			const selection = this.tree.getSelection();
+			if (selection.length === 1) {
+				const dir = selection[0];
+				if (dir && dir.exists) {
+					this.explorerService.selectOrSetRoot(dir.resource);
+				}
+			}
+		}));
+
+		this._register(this.tree.onMouseDblClick(e => {
+			const dir = e.element;
+			if (dir && dir.exists) {
+				this.explorerService.selectOrSetRoot(dir.resource);
+			}
+		}));
+
 		this._register(this.bookmarksManager.onBookmarksChanged(e => {
 			if (!this.isVisible) {
 				return;
@@ -242,12 +263,15 @@ export class RecentDirectoriesView extends ViewPane {
 	private async getDirectoriesTreeElement(rawDirs: Set<string>): Promise<void> {
 		this.dirs = [];
 		for (let path of rawDirs) {
-			const element = new Directory(path);
-			element.exists = await this.fileService.exists(element.resource);
+			const scheme = URI.parse(path).scheme;
+			if (scheme === 'file' || scheme === 'memfs') {
+				const element = new Directory(path);
+				element.exists = await this.fileService.exists(element.resource);
 
-			this.dirs.push({
-				element: element
-			});
+				this.dirs.push({
+					element: element
+				});
+			}
 		}
 		this.dirs.reverse();
 	}

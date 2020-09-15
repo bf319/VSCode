@@ -57,6 +57,7 @@ export interface IExplorerService {
 	 * Will try to resolve the path in case the explorer is not yet expanded to the file yet.
 	 */
 	select(resource: URI, reveal?: boolean | string): Promise<void>;
+	selectOrSetRoot(resource: URI): void;
 
 	registerView(contextAndRefreshProvider: IExplorerView): void;
 }

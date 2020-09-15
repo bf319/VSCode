@@ -11,7 +11,7 @@ import { ExplorerItem } from 'vs/workbench/contrib/files/common/explorerModel';
 import { ExplorerModel } from 'vs/workbench/contrib/scopeTree/common/explorerModel';
 import { URI } from 'vs/base/common/uri';
 import { FileOperationEvent, FileOperation, IFileService, FileChangesEvent, FILES_EXCLUDE_CONFIG, FileChangeType, IResolveFileOptions } from 'vs/platform/files/common/files';
-import { dirname } from 'vs/base/common/resources';
+import { dirname, isEqualOrParent } from 'vs/base/common/resources';
 import { memoize } from 'vs/base/common/decorators';
 import { ResourceGlobMatcher } from 'vs/workbench/common/resources';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -151,6 +151,19 @@ export class ExplorerService implements IExplorerService {
 				}
 				this._onDidChangeRoot.fire();
 			}));
+	}
+
+	selectOrSetRoot(resource: URI): void {
+		if (this.roots.length === 0) {
+			return;
+		}
+
+		const root = this.roots[0];
+		if (isEqualOrParent(resource, root.resource)) {
+			this.select(resource);
+		} else {
+			this.setRoot(resource);
+		}
 	}
 
 	getEditable(): { stat: ExplorerItem, data: IEditableData } | undefined {
