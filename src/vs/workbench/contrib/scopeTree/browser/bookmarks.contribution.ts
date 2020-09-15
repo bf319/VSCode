@@ -411,7 +411,7 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 					const resource = URI.parse(bookmark);
 					const exists = await fileService.exists(resource);
 					if (!exists) {
-						bookmarksManager.addBookmark(resource, BookmarkType.NONE);
+						bookmarksManager.addBookmark(resource, BookmarkType.NONE);	// Remove bookmark
 					}
 				}
 			}
