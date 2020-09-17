@@ -42,8 +42,7 @@ suite('Recent directories sorting', () => {
 
 		const randomIndex = Math.floor(Math.random() * treeElements.length);
 		const randomResource = treeElements[randomIndex].element.resource;
-		const name = basename(randomResource);
-		const index = findIndexInSortedArray(name, treeElements);
+		const index = findIndexInSortedArray(basename(randomResource), treeElements);
 
 		treeElements.splice(index, 0, {
 			element: new Directory(randomResource.toString())
