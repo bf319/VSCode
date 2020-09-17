@@ -9,7 +9,7 @@ import { URI } from 'vs/base/common/uri';
 import { SortType } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
 import { basename } from 'vs/base/common/resources';
 
-// Run these tests using the command 'yarn run mocha --run src/vs/workbench/contrib/scopeTree/test/browser/directory.test.ts'
+// Run these tests using the command 'yarn run mocha --run' with the relative path of the test
 suite('Recent directories sorting', () => {
 	test('Sort resources by their basenames', function () {
 		const resources = createNewRandomResources();
