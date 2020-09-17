@@ -4,49 +4,57 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as assert from 'assert';
-import { getDirectoriesAsSortedTreeElements, findIndexInSortedArray } from 'vs/workbench/contrib/scopeTree/browser/directoryViewer';
+import { getDirectoriesAsSortedTreeElements, findIndexInSortedArray, Directory } from 'vs/workbench/contrib/scopeTree/browser/directoryViewer';
 import { URI } from 'vs/base/common/uri';
 import { SortType } from 'vs/workbench/contrib/scopeTree/common/bookmarks';
 import { basename } from 'vs/base/common/resources';
+import { ITreeElement } from 'vs/base/browser/ui/tree/tree';
 
 // Run these tests using the command 'yarn run mocha --run' with the relative path of the test
 suite('Recent directories sorting', () => {
 	test('Sort resources by their basenames', function () {
-		const resources = createNewRandomResources();
-		const resourcesAsStrings = new Set(resources.map(res => res.toString()));
-		const treeElements = getDirectoriesAsSortedTreeElements(resourcesAsStrings, SortType.NAME);
-		let isSorted = true;
-		for (let i = 0; i + 1 < treeElements.length; i++) {
-			if (treeElements[i].element.getName() > treeElements[i + 1].element.getName()) {
-				isSorted = false;
-			}
-		}
-
-		assert.equal(isSorted, true);
+		const treeElements = createSortedTreeElements();
+		assert.equal(isSorted(treeElements), true);
 	});
 
 	test('Insert a resource in sorted array', function () {
 		const resource = randomResource(5);
-		const name = basename(resource);
-		const resources = createNewRandomResources();
-		const resourcesAsStrings = new Set(resources.map(res => res.toString()));
-		const treeElements = getDirectoriesAsSortedTreeElements(resourcesAsStrings, SortType.NAME);
+		const treeElements = createSortedTreeElements();
+		const index = findIndexInSortedArray(basename(resource), treeElements);
+
+		treeElements.splice(index, 0, {
+			element: new Directory(resource.toString())
+		});
+
+		// The array should remain sorted after insertion
+		assert.equal(isSorted(treeElements), true);
+	});
+
+	test('Insert resource in empty array', function () {
+		const resource = randomResource(5);
+		const treeElements: any[] = [];
+		const index = findIndexInSortedArray(basename(resource), treeElements);
+		assert.equal(index, 0);
+	});
+
+	test('Insert existing resource in sorted array', function () {
+		const treeElements = createSortedTreeElements();
+
+		const randomIndex = Math.floor(Math.random() * treeElements.length);
+		const randomResource = treeElements[randomIndex].element.resource;
+		const name = basename(randomResource);
 		const index = findIndexInSortedArray(name, treeElements);
 
-		if (index === 0) {
-			assert.equal(name <= treeElements[0].element.getName(), true);
-		} else {
-			if (index === treeElements.length) {
-				assert.equal(treeElements[treeElements.length - 1].element.getName() <= name, true);
-			} else {
-				assert.equal(treeElements[index - 1].element.getName() <= name, true);
-				assert.equal(name <= treeElements[index].element.getName(), true);
-			}
-		}
+		treeElements.splice(index, 0, {
+			element: new Directory(randomResource.toString())
+		});
+
+		// The array should remain sorted after insertion
+		assert.equal(isSorted(treeElements), true);
 	});
 });
 
-// Create a file tree mock with random resources
+// Create a file tree mock with random resources (just as we did with the in memory file system)
 const fileNames: string[] = [];
 const directoryNames: string[] = [];
 const workspaceFolder = 'memfs:/sample-folder/';
@@ -140,4 +148,23 @@ let randomResource = (level: number) => {
 	}
 
 	return resource;
+};
+
+let createSortedTreeElements = () => {
+	const resources = createNewRandomResources();
+	const resourcesAsStrings = new Set(resources.map(res => res.toString()));
+	const treeElements = getDirectoriesAsSortedTreeElements(resourcesAsStrings, SortType.NAME);
+
+	return treeElements;
+};
+
+// Check that array is sorted
+let isSorted = (treeElements: ITreeElement<Directory>[]): boolean => {
+	for (let i = 0; i + 1 < treeElements.length; i++) {
+		if (treeElements[i].element.getName() > treeElements[i + 1].element.getName()) {
+			return false;
+		}
+	}
+
+	return true;
 };
